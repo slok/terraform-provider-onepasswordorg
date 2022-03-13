@@ -17,10 +17,6 @@ func (r resourceGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diag
 				Type:     types.StringType,
 				Computed: true,
 			},
-			"last_updated": {
-				Type:     types.StringType,
-				Computed: true,
-			},
 			"name": {
 				Type:     types.StringType,
 				Required: true,

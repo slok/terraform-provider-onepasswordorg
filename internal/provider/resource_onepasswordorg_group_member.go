@@ -17,10 +17,6 @@ func (r resourceGroupMemberType) GetSchema(_ context.Context) (tfsdk.Schema, dia
 				Type:     types.StringType,
 				Computed: true,
 			},
-			"last_updated": {
-				Type:     types.StringType,
-				Computed: true,
-			},
 			"user_id": {
 				Type:     types.StringType,
 				Required: true,

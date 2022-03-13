@@ -9,16 +9,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage/fake"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage/onepasswordcli"
 )
 
 const (
-	envVarOpAddress   = "OP_ADDRESS"
-	envVarOpEmail     = "OP_EMAIL"
-	envVarOpSecretKey = "OP_SECRET_KEY"
+	envVarOpAddress         = "OP_ADDRESS"
+	envVarOpEmail           = "OP_EMAIL"
+	envVarOpSecretKey       = "OP_SECRET_KEY"
+	EnvVarOpFakeStoragePath = "OP_FAKE_STORAGE_PATH"
 )
-
-var stderr = os.Stderr
 
 func New() tfsdk.Provider {
 	return &provider{}
@@ -26,7 +27,7 @@ func New() tfsdk.Provider {
 
 type provider struct {
 	configured bool
-	repo       *onepasswordcli.Repository
+	repo       storage.Repository
 }
 
 // GetSchema returns the schema that the user must configure on the provider block.
@@ -49,21 +50,26 @@ func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics)
 				Sensitive:   true,
 				Description: "Set account 1password secret key",
 			},
+			"fake_storage_path": {
+				Type:        types.StringType,
+				Optional:    true,
+				Description: "file to a path where the provider will store the data as if it is 1password (this is used only on development)",
+			},
 		},
 	}, nil
 }
 
-// Provider schema struct
+// Provider configuration.
 type providerData struct {
-	Address   types.String `tfsdk:"address"`
-	Email     types.String `tfsdk:"email"`
-	SecretKey types.String `tfsdk:"secret_key"`
+	Address         types.String `tfsdk:"address"`
+	Email           types.String `tfsdk:"email"`
+	SecretKey       types.String `tfsdk:"secret_key"`
+	FakeStoragePath types.String `tfsdk:"fake_storage_path"`
 }
 
 // This is like if it was our main entrypoint.
 func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderRequest, resp *tfsdk.ConfigureProviderResponse) {
-
-	// Retrieve provider data from configuration
+	// Retrieve provider data from configuration.
 	var config providerData
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -71,35 +77,57 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 		return
 	}
 
-	const configErrSummary = "Unable to configure client"
-	address, err := p.configureAddress(config)
+	// Error summaries
+	const (
+		configErrSummary = "Unable to configure client"
+		createErrSummary = "Unable to create op client"
+	)
+
+	// Get if we are in fake mode.
+	fakeStoragePath, err := p.configureFakeStoragePath(config)
 	if err != nil {
-		resp.Diagnostics.AddError(configErrSummary, "Invalid address:\n\n"+err.Error())
+		resp.Diagnostics.AddError(configErrSummary, "Invalid fake storage path:\n\n"+err.Error())
 	}
 
-	email, err := p.configureEmail(config)
-	if err != nil {
-		resp.Diagnostics.AddError(configErrSummary, "Invalid email:\n\n"+err.Error())
-	}
+	// Create fake or regular mode.
+	// If the user has set the fake storage path then we are going to use a fake repository.
+	// If the user didn't, we will use the op cli based repository (a.k.a real 1password APIs).
+	var repo storage.Repository
+	if fakeStoragePath != "" {
+		repo, err = fake.NewRepository(fakeStoragePath)
+		if err != nil {
+			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password fake storage:\n\n"+err.Error())
+			return
+		}
+	} else {
+		address, err := p.configureAddress(config)
+		if err != nil {
+			resp.Diagnostics.AddError(configErrSummary, "Invalid address:\n\n"+err.Error())
+		}
 
-	secretKey, err := p.configureSecretKey(config)
-	if err != nil {
-		resp.Diagnostics.AddError(configErrSummary, "Invalid secret key:\n\n"+err.Error())
-	}
+		email, err := p.configureEmail(config)
+		if err != nil {
+			resp.Diagnostics.AddError(configErrSummary, "Invalid email:\n\n"+err.Error())
+		}
 
-	const createErrSummary = "Unable to create op client"
-	// Create OP cli.
-	cli, err := onepasswordcli.NewOpCli(address, email, secretKey)
-	if err != nil {
-		resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op cmd client:\n\n"+err.Error())
-		return
-	}
+		secretKey, err := p.configureSecretKey(config)
+		if err != nil {
+			resp.Diagnostics.AddError(configErrSummary, "Invalid secret key:\n\n"+err.Error())
+		}
 
-	// Create  repository.
-	repo, err := onepasswordcli.NewRepository(*cli)
-	if err != nil {
-		resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op repository:\n\n"+err.Error())
-		return
+		// Create OP cli.
+		cli, err := onepasswordcli.NewOpCli(address, email, secretKey)
+		if err != nil {
+			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op cmd client:\n\n"+err.Error())
+			return
+		}
+
+		// Create  repository.
+		repo, err = onepasswordcli.NewRepository(cli)
+		if err != nil {
+			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op repository:\n\n"+err.Error())
+			return
+		}
 	}
 
 	p.repo = repo
@@ -166,7 +194,18 @@ func (p *provider) configureSecretKey(config providerData) (addres string, err e
 	return secretKey, nil
 }
 
-// GetResources - Defines provider resources
+func (p *provider) configureFakeStoragePath(config providerData) (addres string, err error) {
+	// If not set get from env, the value has priority.
+	var fakePath string
+	if config.Address.Null {
+		fakePath = os.Getenv(EnvVarOpFakeStoragePath)
+	} else {
+		fakePath = config.FakeStoragePath.Value
+	}
+
+	return fakePath, nil
+}
+
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
 		"onepasswordorg_user":         resourceUserType{},
@@ -175,7 +214,6 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 	}, nil
 }
 
-// GetDataSources - Defines provider data sources
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{}, nil
 }
