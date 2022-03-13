@@ -1,7 +1,6 @@
 .DS_Store
 vendor
 
-terraform-provider-hashicups
 bin
 
 # Local .terraform directories

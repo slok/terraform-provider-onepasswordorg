@@ -10,6 +10,6 @@ import (
 
 func main() {
 	tfsdk.Serve(context.Background(), provider.New, tfsdk.ServeOpts{
-		Name: "hashicups",
+		Name: "onepasswordorg",
 	})
 }
