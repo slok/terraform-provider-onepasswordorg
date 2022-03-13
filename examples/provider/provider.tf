@@ -11,4 +11,7 @@ provider "onepasswordorg" {
 
   # Or use `OP_SECRET_KEY` env var.
   secret_key = var.op_secret_key
+
+  # Or use `OP_PASSWORD` env var.
+  password = var.op_password
 }
