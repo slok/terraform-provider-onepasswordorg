@@ -52,3 +52,7 @@ testacc: ## Execute acceptance tests.
 .PHONY: docs
 docs: ## Generate docs.
 	./scripts/gen-docs.sh
+
+.PHONY: gen
+gen: ## Go generate.
+	./scripts/go-gen.sh

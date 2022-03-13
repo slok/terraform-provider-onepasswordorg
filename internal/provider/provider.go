@@ -18,6 +18,7 @@ const (
 	envVarOpAddress         = "OP_ADDRESS"
 	envVarOpEmail           = "OP_EMAIL"
 	envVarOpSecretKey       = "OP_SECRET_KEY"
+	envVarOpPassword        = "OP_PASSWORD"
 	EnvVarOpFakeStoragePath = "OP_FAKE_STORAGE_PATH"
 )
 
@@ -57,6 +58,12 @@ grouping users into teams (groups in 1password).
 				Sensitive:   true,
 				Description: "Set account 1password secret key",
 			},
+			"password": {
+				Type:        types.StringType,
+				Optional:    true,
+				Sensitive:   true,
+				Description: "Set account 1password password",
+			},
 			"fake_storage_path": {
 				Type:        types.StringType,
 				Optional:    true,
@@ -71,6 +78,7 @@ type providerData struct {
 	Address         types.String `tfsdk:"address"`
 	Email           types.String `tfsdk:"email"`
 	SecretKey       types.String `tfsdk:"secret_key"`
+	Password        types.String `tfsdk:"password"`
 	FakeStoragePath types.String `tfsdk:"fake_storage_path"`
 }
 
@@ -122,8 +130,13 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 			resp.Diagnostics.AddError(configErrSummary, "Invalid secret key:\n\n"+err.Error())
 		}
 
+		password, err := p.configurePassword(config)
+		if err != nil {
+			resp.Diagnostics.AddError(configErrSummary, "Invalid password:\n\n"+err.Error())
+		}
+
 		// Create OP cli.
-		cli, err := onepasswordcli.NewOpCli(address, email, secretKey)
+		cli, err := onepasswordcli.NewOpCli(address, email, secretKey, password)
 		if err != nil {
 			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op cmd client:\n\n"+err.Error())
 			return
@@ -199,6 +212,26 @@ func (p *provider) configureSecretKey(config providerData) (addres string, err e
 	}
 
 	return secretKey, nil
+}
+
+func (p *provider) configurePassword(config providerData) (addres string, err error) {
+	if config.Password.Unknown {
+		return "", fmt.Errorf("cannot use unknown value as password")
+	}
+
+	// If not set get from env, the value has priority.
+	var password string
+	if config.Address.Null {
+		password = os.Getenv(envVarOpPassword)
+	} else {
+		password = config.Password.Value
+	}
+
+	if password == "" {
+		return "", fmt.Errorf("password cannot be an empty string")
+	}
+
+	return password, nil
 }
 
 func (p *provider) configureFakeStoragePath(config providerData) (addres string, err error) {
