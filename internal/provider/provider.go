@@ -33,6 +33,13 @@ type provider struct {
 // GetSchema returns the schema that the user must configure on the provider block.
 func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: `
+The Onepassword orginzation provider is used to interact with 1password oganzation resources (users, groups...)
+and not items.
+
+Normally this provider will be used to automate the user and groups management like user onboard/offboards or
+grouping users into teams (groups in 1password).
+`,
 		Attributes: map[string]tfsdk.Attribute{
 			"address": {
 				Type:        types.StringType,

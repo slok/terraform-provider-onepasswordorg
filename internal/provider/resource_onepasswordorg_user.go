@@ -16,18 +16,27 @@ type resourceUserType struct{}
 
 func (r resourceUserType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
+		Description: `
+Provides a User resource.
+
+When a 1password user resources is created, it will be invited  by email.
+`,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
+
 				Type:     types.StringType,
 				Computed: true,
 			},
 			"name": {
-				Type:     types.StringType,
-				Required: true,
+				Type:        types.StringType,
+				Required:    true,
+				Description: "The name of the user.",
 			},
 			"email": {
-				Type:     types.StringType,
-				Required: true,
+				Type:          types.StringType,
+				Required:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Description:   "The email of the user.",
 			},
 		},
 	}, nil
