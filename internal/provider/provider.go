@@ -34,7 +34,7 @@ type provider struct {
 func (p *provider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
-The Onepassword orginzation provider is used to interact with 1password oganzation resources (users, groups...)
+The Onepassword organization provider is used to interact with 1password organization resources (users, groups...)
 and not items.
 
 Normally this provider will be used to automate the user and groups management like user onboard/offboards or

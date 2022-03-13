@@ -3,7 +3,7 @@
 page_title: "onepasswordorg Provider"
 subcategory: ""
 description: |-
-  The Onepassword orginzation provider is used to interact with 1password oganzation resources (users, groups...)
+  The Onepassword organization provider is used to interact with 1password organization resources (users, groups...)
   and not items.
   Normally this provider will be used to automate the user and groups management like user onboard/offboards or
   grouping users into teams (groups in 1password).
@@ -11,7 +11,7 @@ description: |-
 
 # onepasswordorg Provider
 
-The Onepassword orginzation provider is used to interact with 1password oganzation resources (users, groups...)
+The Onepassword organization provider is used to interact with 1password organization resources (users, groups...)
 and not items.
 
 Normally this provider will be used to automate the user and groups management like user onboard/offboards or

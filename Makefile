@@ -51,4 +51,4 @@ testacc: ## Execute acceptance tests.
 
 .PHONY: docs
 docs: ## Generate docs.
-	tfplugindocs generate
+	./scripts/gen-docs.sh

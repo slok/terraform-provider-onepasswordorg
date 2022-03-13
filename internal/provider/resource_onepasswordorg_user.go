@@ -139,12 +139,7 @@ func (r resourceUser) Update(ctx context.Context, req tfsdk.UpdateResourceReques
 		return
 	}
 
-	if state.Email != plan.Email {
-		resp.Diagnostics.AddError("Email can't be changed", "Email can't be changed, to do it you will need to remove and create again the resource.")
-		return
-	}
-
-	// USe plan user as the new data and set ID from state.
+	// Use plan user as the new data and set ID from state.
 	u := mapTfToModelUser(plan)
 	u.ID = state.ID.Value
 

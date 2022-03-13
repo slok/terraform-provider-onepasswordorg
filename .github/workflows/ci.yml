@@ -2,7 +2,30 @@ name: ci
 
 on: [push, pull_request]
 
+env:
+  TF_PLUGIN_DOCS_VERSION: 0.5.1
+
 jobs:
+  check-docs:
+    name: Check docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ matrix.terraform }}
+          terraform_wrapper: false
+      - uses: actions/checkout@v2
+      - name: Check docs up to date
+        run: |
+          cd /tmp
+          curl -L https://github.com/hashicorp/terraform-plugin-docs/releases/download/v${TF_PLUGIN_DOCS_VERSION}/tfplugindocs_${TF_PLUGIN_DOCS_VERSION}_linux_amd64.zip -o f.zip && unzip ./f.zip && chmod a+x tfplugindocs && sudo mv ./tfplugindocs /usr/local/bin/
+          cd -
+
+          ./scripts/check-docs-dirty.sh
+
   unit-test:
     name: Unit Tests
     runs-on: ubuntu-latest

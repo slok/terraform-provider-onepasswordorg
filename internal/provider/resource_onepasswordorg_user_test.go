@@ -2,7 +2,6 @@ package provider_test
 
 import (
 	"os"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -104,53 +103,6 @@ resource "onepasswordorg_user" "test_user" {
 					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "name", "Test user modified"),
 					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "email", "testuser@test.test"),
 				),
-			},
-		},
-	})
-}
-
-// TestAcc_UserUpdateEmail will check a user can't update its email after its creation.
-func TestAccUserUpdateEmail(t *testing.T) {
-	// Prepare fake storage.
-	path, delete := getFakeRepoTmpFile("TestAccUserUpdateEmail")
-	defer delete()
-	_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
-
-	// Test tf data.
-	configCreate := `
-resource "onepasswordorg_user" "test_user" {
-  name  = "Test user"
-  email = "testuser@test.test"
-}
-`
-	configUpdate := `
-resource "onepasswordorg_user" "test_user" {
-  name  = "Test user"
-  email = "testuser.modified@test.test"
-}
-`
-
-	// Fake repo IDs are based on emails.
-	expUserCreate := model.User{
-		ID:    "testuser@test.test",
-		Name:  "Test user",
-		Email: "testuser@test.test",
-	}
-
-	// Execute test.
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		Steps: []resource.TestStep{
-			{
-				Config: configCreate,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					assertUserOnFakeStorage(t, &expUserCreate),
-				),
-			},
-			{
-				Config:      configUpdate,
-				ExpectError: regexp.MustCompile("Email can't be changed"),
 			},
 		},
 	})
