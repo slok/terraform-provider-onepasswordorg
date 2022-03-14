@@ -1,4 +1,4 @@
-# Get user UUID with op CLI.
+# Go to the website and get the UUID from the URL or use the `op` cli:
 op get user user0@slok.dev
 
 # Import.

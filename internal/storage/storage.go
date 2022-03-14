@@ -11,4 +11,9 @@ type Repository interface {
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
 	EnsureUser(ctx context.Context, user model.User) (*model.User, error)
 	DeleteUser(ctx context.Context, id string) error
+
+	CreateGroup(ctx context.Context, group model.Group) (*model.Group, error)
+	GetGroupByID(ctx context.Context, id string) (*model.Group, error)
+	EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error)
+	DeleteGroup(ctx context.Context, id string) error
 }
