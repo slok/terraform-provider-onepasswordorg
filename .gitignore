@@ -37,3 +37,6 @@ override.tf.json
 .terraformrc
 terraform.rc
 terraform
+
+internal/storage/onepasswordcli/op-cli-tfe/op
+dist/
