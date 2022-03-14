@@ -56,3 +56,36 @@ func assertUserDeletedOnFakeStorage(t *testing.T, userID string) resource.TestCh
 		return nil
 	})
 }
+
+// assertGroupOnFakeStorage is a helper to assert the expected group is stored on the fake
+// repository.
+func assertGroupOnFakeStorage(t *testing.T, expGroup *model.Group) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		// Get fake repo.
+		repo := getFakeRepository(t)
+
+		// Check user.
+		gotGroup, err := repo.GetGroupByID(context.TODO(), expGroup.ID)
+		assert.NoError(err)
+		assert.Equal(expGroup, gotGroup)
+		return nil
+	})
+}
+
+// assertGroupDeletedOnFakeStorage is a helper to assert the expected user ID is not stored on
+// the fake repository.
+func assertGroupDeletedOnFakeStorage(t *testing.T, groupID string) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		// Get fake repo.
+		repo := getFakeRepository(t)
+
+		// Check user is missing.
+		_, err := repo.GetGroupByID(context.TODO(), groupID)
+		assert.Error(err)
+		return nil
+	})
+}

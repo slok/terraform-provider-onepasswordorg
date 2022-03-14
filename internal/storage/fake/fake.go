@@ -14,6 +14,7 @@ import (
 type repository struct {
 	fakeFilePath string
 	usersByID    map[string]model.User
+	groupsByID   map[string]model.Group
 	storageMu    sync.RWMutex
 }
 
@@ -28,9 +29,15 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 		users = fks.Users
 	}
 
+	groups := map[string]model.Group{}
+	if fks != nil && fks.Groups != nil {
+		groups = fks.Groups
+	}
+
 	return &repository{
 		fakeFilePath: fakeFilePath,
 		usersByID:    users,
+		groupsByID:   groups,
 	}, nil
 }
 
@@ -45,9 +52,9 @@ func (r *repository) CreateUser(ctx context.Context, user model.User) (*model.Us
 	}
 
 	user.ID = id
-	r.usersByID[user.Email] = user
+	r.usersByID[user.ID] = user
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +85,7 @@ func (r *repository) EnsureUser(ctx context.Context, user model.User) (*model.Us
 
 	r.usersByID[user.Email] = user
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +104,75 @@ func (r *repository) DeleteUser(ctx context.Context, id string) error {
 
 	delete(r.usersByID, id)
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) CreateGroup(ctx context.Context, group model.Group) (*model.Group, error) {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := group.Name
+	_, ok := r.groupsByID[id]
+	if ok {
+		return nil, fmt.Errorf("group already exists")
+	}
+
+	group.ID = id
+	r.groupsByID[group.ID] = group
+
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &group, nil
+}
+func (r *repository) GetGroupByID(ctx context.Context, id string) (*model.Group, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	group, ok := r.groupsByID[id]
+	if !ok {
+		return nil, fmt.Errorf("group does not exists")
+	}
+
+	return &group, nil
+}
+func (r *repository) EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error) {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	_, ok := r.groupsByID[group.ID]
+	if !ok {
+		return nil, fmt.Errorf("group doesn't exists")
+	}
+
+	r.groupsByID[group.Name] = group
+
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	if err != nil {
+		return nil, err
+	}
+
+	return &group, nil
+}
+func (r *repository) DeleteGroup(ctx context.Context, id string) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	_, ok := r.groupsByID[id]
+	if !ok {
+		return fmt.Errorf("group doesn't exists")
+	}
+
+	delete(r.groupsByID, id)
+
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
 	if err != nil {
 		return err
 	}
@@ -106,7 +181,8 @@ func (r *repository) DeleteUser(ctx context.Context, id string) error {
 }
 
 type fakeStorage struct {
-	Users map[string]model.User
+	Users  map[string]model.User
+	Groups map[string]model.Group
 }
 
 func dumpStorage(filePath string, fks fakeStorage) error {

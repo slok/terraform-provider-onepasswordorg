@@ -9,8 +9,9 @@ type User struct {
 
 // Group represents a 1password group.
 type Group struct {
-	ID   string
-	Name string
+	ID          string
+	Name        string
+	Description string
 }
 
 // GroupRole represents a 1password user membership role.

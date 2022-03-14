@@ -67,7 +67,7 @@ grouping users into teams (groups in 1password).
 			"fake_storage_path": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: "file to a path where the provider will store the data as if it is 1password (this is used only on development)",
+				Description: "File to a path where the provider will store the data as if it is 1password (this is used only on development)",
 			},
 		},
 	}, nil
@@ -181,7 +181,7 @@ func (p *provider) configureEmail(config providerData) (addres string, err error
 
 	// If not set get from env, the value has priority.
 	var email string
-	if config.Address.Null {
+	if config.Email.Null {
 		email = os.Getenv(envVarOpEmail)
 	} else {
 		email = config.Email.Value
@@ -201,7 +201,7 @@ func (p *provider) configureSecretKey(config providerData) (addres string, err e
 
 	// If not set get from env, the value has priority.
 	var secretKey string
-	if config.Address.Null {
+	if config.SecretKey.Null {
 		secretKey = os.Getenv(envVarOpSecretKey)
 	} else {
 		secretKey = config.SecretKey.Value
@@ -221,7 +221,7 @@ func (p *provider) configurePassword(config providerData) (addres string, err er
 
 	// If not set get from env, the value has priority.
 	var password string
-	if config.Address.Null {
+	if config.Password.Null {
 		password = os.Getenv(envVarOpPassword)
 	} else {
 		password = config.Password.Value
@@ -237,7 +237,7 @@ func (p *provider) configurePassword(config providerData) (addres string, err er
 func (p *provider) configureFakeStoragePath(config providerData) (addres string, err error) {
 	// If not set get from env, the value has priority.
 	var fakePath string
-	if config.Address.Null {
+	if config.FakeStoragePath.Null {
 		fakePath = os.Getenv(EnvVarOpFakeStoragePath)
 	} else {
 		fakePath = config.FakeStoragePath.Value

@@ -46,6 +46,6 @@ provider "onepasswordorg" {
 
 - **address** (String) Set account 1password domain address (e.g: something.1password.com)
 - **email** (String) Set account 1password email
-- **fake_storage_path** (String) file to a path where the provider will store the data as if it is 1password (this is used only on development)
+- **fake_storage_path** (String) File to a path where the provider will store the data as if it is 1password (this is used only on development)
 - **password** (String, Sensitive) Set account 1password password
 - **secret_key** (String, Sensitive) Set account 1password secret key

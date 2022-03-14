@@ -8,6 +8,12 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 )
 
+type opUser struct {
+	ID    string `json:"uuid"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
 func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
 	cmdArgs.WithCreate().WithUserEmail(user.Email).WithName(user.Name)
@@ -26,12 +32,6 @@ func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.Use
 	gotUser := mapOpToModelUser(ou)
 
 	return &gotUser, nil
-}
-
-type opUser struct {
-	ID    string `json:"uuid"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
 }
 
 func (r Repository) GetUserByID(ctx context.Context, id string) (*model.User, error) {

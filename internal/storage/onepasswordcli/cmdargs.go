@@ -43,6 +43,16 @@ func (o *onePasswordCliCmd) WithUserID(id string) *onePasswordCliCmd {
 	return o
 }
 
+func (o *onePasswordCliCmd) WithGroupName(name string) *onePasswordCliCmd {
+	o.args = append(o.args, "group", name)
+	return o
+}
+
+func (o *onePasswordCliCmd) WithGroupID(id string) *onePasswordCliCmd {
+	o.args = append(o.args, "group", id)
+	return o
+}
+
 func (o *onePasswordCliCmd) WithName(name string) *onePasswordCliCmd {
 	o.args = append(o.args, name)
 	return o
@@ -55,6 +65,15 @@ func (o *onePasswordCliCmd) WithEmail(email string) *onePasswordCliCmd {
 
 func (o *onePasswordCliCmd) WithNewName(name string) *onePasswordCliCmd {
 	o.args = append(o.args, "--name", name)
+	return o
+}
+
+func (o *onePasswordCliCmd) WithDescription(description string) *onePasswordCliCmd {
+	if description == "" {
+		return o
+	}
+
+	o.args = append(o.args, "--description", description)
 	return o
 }
 
