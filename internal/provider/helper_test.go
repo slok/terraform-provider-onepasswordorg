@@ -66,7 +66,7 @@ func assertGroupOnFakeStorage(t *testing.T, expGroup *model.Group) resource.Test
 		// Get fake repo.
 		repo := getFakeRepository(t)
 
-		// Check user.
+		// Check group.
 		gotGroup, err := repo.GetGroupByID(context.TODO(), expGroup.ID)
 		assert.NoError(err)
 		assert.Equal(expGroup, gotGroup)
@@ -74,7 +74,7 @@ func assertGroupOnFakeStorage(t *testing.T, expGroup *model.Group) resource.Test
 	})
 }
 
-// assertGroupDeletedOnFakeStorage is a helper to assert the expected user ID is not stored on
+// assertGroupDeletedOnFakeStorage is a helper to assert the expected group ID is not stored on
 // the fake repository.
 func assertGroupDeletedOnFakeStorage(t *testing.T, groupID string) resource.TestCheckFunc {
 	assert := assert.New(t)
@@ -83,7 +83,7 @@ func assertGroupDeletedOnFakeStorage(t *testing.T, groupID string) resource.Test
 		// Get fake repo.
 		repo := getFakeRepository(t)
 
-		// Check user is missing.
+		// Check group is missing.
 		_, err := repo.GetGroupByID(context.TODO(), groupID)
 		assert.Error(err)
 		return nil

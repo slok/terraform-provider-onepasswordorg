@@ -50,7 +50,7 @@ resource "onepasswordorg_group" "test_group" {
 	})
 }
 
-// TestAcc_GroupUpdateDescription will check a group can update its description after its creation.
+// TestAccGroupUpdateDescription will check a group can update its description after its creation.
 func TestAccGroupUpdateDescription(t *testing.T) {
 	// Prepare fake storage.
 	path, delete := getFakeRepoTmpFile("TestAccGroupUpdateName")
