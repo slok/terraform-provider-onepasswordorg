@@ -12,10 +12,11 @@ import (
 )
 
 type repository struct {
-	fakeFilePath string
-	usersByID    map[string]model.User
-	groupsByID   map[string]model.Group
-	storageMu    sync.RWMutex
+	fakeFilePath   string
+	usersByID      map[string]model.User
+	groupsByID     map[string]model.Group
+	membershipByID map[string]model.Membership
+	storageMu      sync.RWMutex
 }
 
 func NewRepository(fakeFilePath string) (storage.Repository, error) {
@@ -34,10 +35,16 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 		groups = fks.Groups
 	}
 
+	members := map[string]model.Membership{}
+	if fks != nil && fks.Groups != nil {
+		members = fks.Members
+	}
+
 	return &repository{
-		fakeFilePath: fakeFilePath,
-		usersByID:    users,
-		groupsByID:   groups,
+		fakeFilePath:   fakeFilePath,
+		usersByID:      users,
+		groupsByID:     groups,
+		membershipByID: members,
 	}, nil
 }
 
@@ -54,7 +61,7 @@ func (r *repository) CreateUser(ctx context.Context, user model.User) (*model.Us
 	user.ID = id
 	r.usersByID[user.ID] = user
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +92,7 @@ func (r *repository) EnsureUser(ctx context.Context, user model.User) (*model.Us
 
 	r.usersByID[user.Email] = user
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +111,7 @@ func (r *repository) DeleteUser(ctx context.Context, id string) error {
 
 	delete(r.usersByID, id)
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return err
 	}
@@ -125,7 +132,7 @@ func (r *repository) CreateGroup(ctx context.Context, group model.Group) (*model
 	group.ID = id
 	r.groupsByID[group.ID] = group
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +161,7 @@ func (r *repository) EnsureGroup(ctx context.Context, group model.Group) (*model
 
 	r.groupsByID[group.Name] = group
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +179,7 @@ func (r *repository) DeleteGroup(ctx context.Context, id string) error {
 
 	delete(r.groupsByID, id)
 
-	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID})
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
 	if err != nil {
 		return err
 	}
@@ -180,9 +187,63 @@ func (r *repository) DeleteGroup(ctx context.Context, id string) error {
 	return nil
 }
 
+func (r *repository) getMembershipID(groupID, userID string) string {
+	return groupID + "/" + userID
+}
+
+func (r *repository) EnsureMembership(ctx context.Context, membership model.Membership) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getMembershipID(membership.GroupID, membership.UserID)
+	r.membershipByID[id] = membership
+
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteMembership(ctx context.Context, membership model.Membership) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getMembershipID(membership.GroupID, membership.UserID)
+
+	_, ok := r.membershipByID[id]
+	if !ok {
+		return fmt.Errorf("membership doesn't exists")
+	}
+
+	delete(r.membershipByID, id)
+
+	err := dumpStorage(r.fakeFilePath, fakeStorage{Users: r.usersByID, Groups: r.groupsByID, Members: r.membershipByID})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) GetMembershipByID(ctx context.Context, groupID, userID string) (*model.Membership, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	id := r.getMembershipID(groupID, userID)
+	m, ok := r.membershipByID[id]
+	if !ok {
+		return nil, fmt.Errorf("membership doesn't exists")
+	}
+
+	return &m, nil
+}
+
 type fakeStorage struct {
-	Users  map[string]model.User
-	Groups map[string]model.Group
+	Users   map[string]model.User
+	Groups  map[string]model.Group
+	Members map[string]model.Membership
 }
 
 func dumpStorage(filePath string, fks fakeStorage) error {

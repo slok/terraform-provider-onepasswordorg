@@ -173,11 +173,11 @@ func (r resourceUser) Delete(ctx context.Context, req tfsdk.DeleteResourceReques
 		return
 	}
 
-	// Get user.
+	// Delete user.
 	id := tfUser.ID.Value
 	err := r.p.repo.DeleteUser(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading user", fmt.Sprintf("Could not get user %q, unexpected error: %s", id, err.Error()))
+		resp.Diagnostics.AddError("Error deleting user", fmt.Sprintf("Could not delete user %q, unexpected error: %s", id, err.Error()))
 		return
 	}
 

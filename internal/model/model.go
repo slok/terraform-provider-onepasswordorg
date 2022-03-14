@@ -14,18 +14,17 @@ type Group struct {
 	Description string
 }
 
-// GroupRole represents a 1password user membership role.
-type GroupRole int
+// MembershipRole represents a 1password user membership role.
+type MembershipRole int
 
 const (
-	GroupRoleUnknown GroupRole = iota
-	GroupRoleMember
-	GroupRoleAdmin
+	MembershipRoleMember MembershipRole = iota
+	MembershipRoleManager
 )
 
-// GroupRole represents a 1password user membership into a group.
-type GroupMembership struct {
+// Role represents a 1password user membership into a group.
+type Membership struct {
 	UserID  string
 	GroupID string
-	Role    GroupRole
+	Role    MembershipRole
 }

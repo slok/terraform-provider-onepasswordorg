@@ -28,8 +28,23 @@ func (o *onePasswordCliCmd) WithGet() *onePasswordCliCmd {
 	return o
 }
 
+func (o *onePasswordCliCmd) WithList() *onePasswordCliCmd {
+	o.args = append(o.args, "list")
+	return o
+}
+
 func (o *onePasswordCliCmd) WithDelete() *onePasswordCliCmd {
 	o.args = append(o.args, "delete")
+	return o
+}
+
+func (o *onePasswordCliCmd) WithRemove() *onePasswordCliCmd {
+	o.args = append(o.args, "remove")
+	return o
+}
+
+func (o *onePasswordCliCmd) WithUsers() *onePasswordCliCmd {
+	o.args = append(o.args, "users")
 	return o
 }
 
@@ -58,6 +73,11 @@ func (o *onePasswordCliCmd) WithName(name string) *onePasswordCliCmd {
 	return o
 }
 
+func (o *onePasswordCliCmd) WithID(id string) *onePasswordCliCmd {
+	o.args = append(o.args, id)
+	return o
+}
+
 func (o *onePasswordCliCmd) WithEmail(email string) *onePasswordCliCmd {
 	o.args = append(o.args, email)
 	return o
@@ -78,6 +98,14 @@ func (o *onePasswordCliCmd) WithDescription(description string) *onePasswordCliC
 }
 
 func (o *onePasswordCliCmd) WithRole(role string) *onePasswordCliCmd {
+	if role == "" {
+		return o
+	}
 	o.args = append(o.args, "--role", role)
+	return o
+}
+
+func (o *onePasswordCliCmd) WithGroupFilter(id string) *onePasswordCliCmd {
+	o.args = append(o.args, "--group", id)
 	return o
 }
