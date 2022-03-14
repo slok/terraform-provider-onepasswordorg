@@ -176,7 +176,7 @@ func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	id := tfGroup.ID.Value
 	err := r.p.repo.DeleteGroup(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading group", fmt.Sprintf("Could not get group %q, unexpected error: %s", id, err.Error()))
+		resp.Diagnostics.AddError("Error deleting group", fmt.Sprintf("Could not delete group %q, unexpected error: %s", id, err.Error()))
 		return
 	}
 

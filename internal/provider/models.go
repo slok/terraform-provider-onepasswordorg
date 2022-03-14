@@ -15,3 +15,10 @@ type Group struct {
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
+
+type Member struct {
+	ID      types.String `tfsdk:"id"`
+	UserID  types.String `tfsdk:"user_id"`
+	GroupID types.String `tfsdk:"group_id"`
+	Role    types.String `tfsdk:"role"`
+}

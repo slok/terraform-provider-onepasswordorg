@@ -6,6 +6,7 @@
 
 - User resource.
 - Group resource.
+- Group member resource.
 - Fake 1password storage.
 - Real 1password storage.
 
