@@ -50,7 +50,7 @@ resource "onepasswordorg_user" "test_user" {
 	})
 }
 
-// TestAcc_UserUpdateName will check a user can update its name after its creation.
+// TestAccUserUpdateName will check a user can update its name after its creation.
 func TestAccUserUpdateName(t *testing.T) {
 	// Prepare fake storage.
 	path, delete := getFakeRepoTmpFile("TestAccUserUpdateName")
