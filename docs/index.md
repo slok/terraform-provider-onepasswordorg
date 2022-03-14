@@ -23,12 +23,13 @@ grouping users into teams (groups in 1password).
 terraform {
   required_providers {
     onepasswordorg = {
-      source = "slok.dev/tf/onepasswordorg"
+      source = "slok/onepasswordorg"
     }
   }
 }
+
 provider "onepasswordorg" {
-  address = "mycompany.onepassword.com"
+  address = "mycompany.1password.com"
   email   = "bot+onepassword@mycompany.com"
 
   # Or use `OP_SECRET_KEY` env var.
