@@ -14,24 +14,39 @@ on:
   push:
     tags:
       - "v*"
+env:
+  OP_CLI_VERSION: 1.12.4
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Unshallow
         run: git fetch --prune --unshallow
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.14
+          go-version: "1.17"
+
       - name: Import GPG key
         id: import_gpg
         uses: hashicorp/ghaction-import-gpg@v2.1.0
         env:
+          # These secrets will need to be configured for the repository:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           PASSPHRASE: ${{ secrets.PASSPHRASE }}
+
+      - name: Download OP cli (to embed on the binary)
+        run: |
+            cd /tmp
+            curl https://cache.agilebits.com/dist/1P/op/pkg/v${OP_CLI_VERSION}/op_linux_amd64_v${OP_CLI_VERSION}.zip -o ./op.zip && unzip ./op.zip
+            cd -
+            sudo mv /tmp/op ./internal/storage/onepasswordcli/op-cli-tfe/op
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
@@ -39,4 +54,5 @@ jobs:
           args: release --rm-dist
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
