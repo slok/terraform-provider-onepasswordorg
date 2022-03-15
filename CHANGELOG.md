@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.2.0] - 2022-03-15
+
 ### Added
 
 - User data source.
@@ -22,5 +24,6 @@
 - Real 1password storage.
 - Terraform registry release.
 
-[unreleased]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/slok/terraform-provider-onepasswordorg/releases/tag/v0.1.0
