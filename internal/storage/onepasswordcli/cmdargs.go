@@ -8,87 +8,67 @@ func (o *onePasswordCliCmd) GetArgs() []string {
 	return o.args
 }
 
-func (o *onePasswordCliCmd) WithAdd() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) AddArg() *onePasswordCliCmd {
 	o.args = append(o.args, "add")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithCreate() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) CreateArg() *onePasswordCliCmd {
 	o.args = append(o.args, "create")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithEdit() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) EditArg() *onePasswordCliCmd {
 	o.args = append(o.args, "edit")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithGet() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) GetArg() *onePasswordCliCmd {
 	o.args = append(o.args, "get")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithList() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) ListArg() *onePasswordCliCmd {
 	o.args = append(o.args, "list")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithDelete() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) DeleteArg() *onePasswordCliCmd {
 	o.args = append(o.args, "delete")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithRemove() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) RemoveArg() *onePasswordCliCmd {
 	o.args = append(o.args, "remove")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithUsers() *onePasswordCliCmd {
+func (o *onePasswordCliCmd) UsersArg() *onePasswordCliCmd {
 	o.args = append(o.args, "users")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithUserEmail(email string) *onePasswordCliCmd {
-	o.args = append(o.args, "user", email)
+func (o *onePasswordCliCmd) UserArg() *onePasswordCliCmd {
+	o.args = append(o.args, "user")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithUserID(id string) *onePasswordCliCmd {
-	o.args = append(o.args, "user", id)
+func (o *onePasswordCliCmd) GroupArg() *onePasswordCliCmd {
+	o.args = append(o.args, "group")
 	return o
 }
 
-func (o *onePasswordCliCmd) WithGroupName(name string) *onePasswordCliCmd {
-	o.args = append(o.args, "group", name)
+func (o *onePasswordCliCmd) RawStrArg(s string) *onePasswordCliCmd {
+	o.args = append(o.args, s)
 	return o
 }
 
-func (o *onePasswordCliCmd) WithGroupID(id string) *onePasswordCliCmd {
-	o.args = append(o.args, "group", id)
-	return o
-}
-
-func (o *onePasswordCliCmd) WithName(name string) *onePasswordCliCmd {
-	o.args = append(o.args, name)
-	return o
-}
-
-func (o *onePasswordCliCmd) WithID(id string) *onePasswordCliCmd {
-	o.args = append(o.args, id)
-	return o
-}
-
-func (o *onePasswordCliCmd) WithEmail(email string) *onePasswordCliCmd {
-	o.args = append(o.args, email)
-	return o
-}
-
-func (o *onePasswordCliCmd) WithNewName(name string) *onePasswordCliCmd {
+func (o *onePasswordCliCmd) NameFlag(name string) *onePasswordCliCmd {
 	o.args = append(o.args, "--name", name)
 	return o
 }
 
-func (o *onePasswordCliCmd) WithDescription(description string) *onePasswordCliCmd {
+func (o *onePasswordCliCmd) DescriptionFlag(description string) *onePasswordCliCmd {
 	if description == "" {
 		return o
 	}
@@ -97,7 +77,7 @@ func (o *onePasswordCliCmd) WithDescription(description string) *onePasswordCliC
 	return o
 }
 
-func (o *onePasswordCliCmd) WithRole(role string) *onePasswordCliCmd {
+func (o *onePasswordCliCmd) RoleFlag(role string) *onePasswordCliCmd {
 	if role == "" {
 		return o
 	}
@@ -105,7 +85,7 @@ func (o *onePasswordCliCmd) WithRole(role string) *onePasswordCliCmd {
 	return o
 }
 
-func (o *onePasswordCliCmd) WithGroupFilter(id string) *onePasswordCliCmd {
+func (o *onePasswordCliCmd) GroupFlag(id string) *onePasswordCliCmd {
 	o.args = append(o.args, "--group", id)
 	return o
 }

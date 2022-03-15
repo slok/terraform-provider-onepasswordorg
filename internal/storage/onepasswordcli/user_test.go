@@ -125,6 +125,61 @@ func TestRepositoryGetUserByID(t *testing.T) {
 	}
 }
 
+func TestRepositoryGetUserByEmail(t *testing.T) {
+	tests := map[string]struct {
+		email   string
+		mock    func(m *onepasswordclimock.OpCli)
+		expUser *model.User
+		expErr  bool
+	}{
+		"Getting a user correctly, should return the user data.": {
+			email: "test@test.io",
+			mock: func(m *onepasswordclimock.OpCli) {
+				expCmd := `get user test@test.io`
+				stdout := `{"uuid":"1234567890","createdAt":"2021-09-08T07:45:22Z","updatedAt":"2021-09-08T07:47:02Z","lastAuthAt":"2022-03-12T14:23:17Z","email":"test@test.io","firstName":"Test00","lastName":"","name":"Test00","attrVersion":3,"keysetVersion":4,"state":"A","type":"R","avatar":"","language":"en","accountKeyFormat":"","accountKeyUuid":"","combinedPermissions":98765432}`
+				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
+			},
+			expUser: &model.User{
+				ID:    "1234567890",
+				Email: "test@test.io",
+				Name:  "Test00",
+			},
+		},
+
+		"Having an error while calling the op CLI, should fail.": {
+			email: "test@test.io",
+			mock: func(m *onepasswordclimock.OpCli) {
+				expCmd := `get user test@test.io`
+				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
+			},
+			expErr: true,
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			require := require.New(t)
+			assert := assert.New(t)
+
+			mc := &onepasswordclimock.OpCli{}
+			test.mock(mc)
+
+			repo, err := onepasswordcli.NewRepository(mc)
+			require.NoError(err)
+
+			gotUser, err := repo.GetUserByEmail(context.TODO(), test.email)
+
+			if test.expErr {
+				assert.Error(err)
+			} else if assert.NoError(err) {
+				assert.Equal(test.expUser, gotUser)
+			}
+
+			mc.AssertExpectations(t)
+		})
+	}
+}
+
 func TestRepositoryEnsureUser(t *testing.T) {
 	tests := map[string]struct {
 		user    model.User

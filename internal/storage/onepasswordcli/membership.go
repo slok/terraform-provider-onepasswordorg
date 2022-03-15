@@ -21,11 +21,24 @@ func (r Repository) EnsureMembership(ctx context.Context, membership model.Membe
 	}
 
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithAdd().WithUserID(membership.UserID).WithID(membership.GroupID).WithRole(role)
+	cmdArgs.AddArg().UserArg().RawStrArg(membership.UserID).RawStrArg(membership.GroupID).RoleFlag(role)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
 		return fmt.Errorf("op cli command failed: %w: %s", err, stderr)
+	}
+
+	// 1password doesn't know to add a member to a group with a specific role, so we would need to:
+	// - Add user to group.
+	// - Change role.
+	// By default 1passwords add users as members, so in case the role is other than that make a second
+	// call always. We assume this tradeoff of extra call in these cases to avoid the need to apply
+	// tf twice.
+	if membership.Role != model.MembershipRoleMember {
+		_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
+		if err != nil {
+			return fmt.Errorf("op cli command failed: %w: %s", err, stderr)
+		}
 	}
 
 	return nil
@@ -33,7 +46,7 @@ func (r Repository) EnsureMembership(ctx context.Context, membership model.Membe
 
 func (r Repository) GetMembershipByID(ctx context.Context, groupID, userID string) (*model.Membership, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithList().WithUsers().WithGroupFilter(groupID)
+	cmdArgs.ListArg().UsersArg().GroupFlag(groupID)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -72,7 +85,7 @@ func (r Repository) GetMembershipByID(ctx context.Context, groupID, userID strin
 
 func (r Repository) DeleteMembership(ctx context.Context, membership model.Membership) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithRemove().WithUserID(membership.UserID).WithID(membership.GroupID)
+	cmdArgs.RemoveArg().UserArg().RawStrArg(membership.UserID).RawStrArg(membership.GroupID)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {

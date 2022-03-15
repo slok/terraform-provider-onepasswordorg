@@ -62,29 +62,29 @@ so it satisfies the op Cli requirement inside Terraform cloud workers.
 			"address": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: fmt.Sprintf("Set account 1password domain address (e.g: something.1password.com). Also `%s` en var can be used.", envVarOpAddress),
+				Description: fmt.Sprintf("Set account 1password domain address (e.g: something.1password.com). Also `%s` env var can be used.", envVarOpAddress),
 			},
 			"email": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: fmt.Sprintf("Set account 1password email. Also `%s` en var can be used.", envVarOpEmail),
+				Description: fmt.Sprintf("Set account 1password email. Also `%s` env var can be used.", envVarOpEmail),
 			},
 			"secret_key": {
 				Type:        types.StringType,
 				Optional:    true,
 				Sensitive:   true,
-				Description: fmt.Sprintf("Set account 1password secret key. Also `%s` en var can be used.", envVarOpSecretKey),
+				Description: fmt.Sprintf("Set account 1password secret key. Also `%s` env var can be used.", envVarOpSecretKey),
 			},
 			"password": {
 				Type:        types.StringType,
 				Optional:    true,
 				Sensitive:   true,
-				Description: fmt.Sprintf("Set account 1password password. Also `%s` en var can be used.", envVarOpPassword),
+				Description: fmt.Sprintf("Set account 1password password. Also `%s` env var can be used.", envVarOpPassword),
 			},
 			"fake_storage_path": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: fmt.Sprintf("File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `%s` en var can be used.", EnvVarOpFakeStoragePath),
+				Description: fmt.Sprintf("File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `%s` env var can be used.", EnvVarOpFakeStoragePath),
 			},
 		},
 	}, nil
@@ -272,5 +272,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 }
 
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
-	return map[string]tfsdk.DataSourceType{}, nil
+	return map[string]tfsdk.DataSourceType{
+		"onepasswordorg_user": dataSourceUserType{},
+	}, nil
 }

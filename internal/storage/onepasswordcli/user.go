@@ -16,7 +16,7 @@ type opUser struct {
 
 func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithCreate().WithUserEmail(user.Email).WithName(user.Name)
+	cmdArgs.CreateArg().UserArg().RawStrArg(user.Email).RawStrArg(user.Name)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -36,7 +36,27 @@ func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.Use
 
 func (r Repository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithGet().WithUserID(id)
+	cmdArgs.GetArg().UserArg().RawStrArg(id)
+
+	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
+	if err != nil {
+		return nil, fmt.Errorf("op cli command failed: %w: %s", err, stderr)
+	}
+
+	ou := opUser{}
+	err = json.Unmarshal([]byte(stdout), &ou)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal op cli stdout: %w", err)
+	}
+
+	gotUser := mapOpToModelUser(ou)
+
+	return &gotUser, nil
+}
+
+func (r Repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	cmdArgs := &onePasswordCliCmd{}
+	cmdArgs.GetArg().UserArg().RawStrArg(email)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -56,7 +76,7 @@ func (r Repository) GetUserByID(ctx context.Context, id string) (*model.User, er
 
 func (r Repository) EnsureUser(ctx context.Context, user model.User) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithEdit().WithUserID(user.ID).WithNewName(user.Name)
+	cmdArgs.EditArg().UserArg().RawStrArg(user.ID).NameFlag(user.Name)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -68,7 +88,7 @@ func (r Repository) EnsureUser(ctx context.Context, user model.User) (*model.Use
 
 func (r Repository) DeleteUser(ctx context.Context, id string) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithDelete().WithUserID(id)
+	cmdArgs.DeleteArg().UserArg().RawStrArg(id)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
