@@ -17,7 +17,7 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Check docs up to date
         run: |
           cd /tmp
@@ -25,6 +25,15 @@ jobs:
           cd -
 
           ./scripts/check-docs-dirty.sh
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    # Execute the checks inside the container instead the VM.
+    container: golangci/golangci-lint:v1.44.2-alpine
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./scripts/lint.sh
 
   unit-test:
     name: Unit Tests
@@ -37,7 +46,7 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: make test
 
   acceptance-test:
@@ -57,5 +66,5 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: make testacc

@@ -56,3 +56,7 @@ docs: ## Generate docs.
 .PHONY: gen
 gen: ## Go generate.
 	./scripts/go-gen.sh
+
+.PHONY: check
+check: ## Execute code check like linting.
+	./scripts/lint.sh
