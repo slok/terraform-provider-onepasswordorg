@@ -40,34 +40,51 @@ and not items.
 
 Normally this provider will be used to automate the user and groups management like user onboard/offboards or
 grouping users into teams (groups in 1password).
+
+## Requirements
+
+This provider needs [op](https://1password.com/downloads/command-line/) Cli, thats why it doesn't use 1password connect
+API and needs a real 1password account as the authentication.
+
+## Authentication
+
+Needs a real 1password account so the provider can use the "password" and "secret key" of that account.
+
+A recommended way would be creating an account in the 1password organization/company only for automation
+like Terraform (used by this provider).
+
+## Terraform cloud
+
+The provider will detect that its executing in terraform cloud and will use the embedded op CLI for this purpose
+so it satisfies the op Cli requirement inside Terraform cloud workers.
 `,
 		Attributes: map[string]tfsdk.Attribute{
 			"address": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: "Set account 1password domain address (e.g: something.1password.com)",
+				Description: fmt.Sprintf("Set account 1password domain address (e.g: something.1password.com). Also `%s` en var can be used.", envVarOpAddress),
 			},
 			"email": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: "Set account 1password email",
+				Description: fmt.Sprintf("Set account 1password email. Also `%s` en var can be used.", envVarOpEmail),
 			},
 			"secret_key": {
 				Type:        types.StringType,
 				Optional:    true,
 				Sensitive:   true,
-				Description: "Set account 1password secret key",
+				Description: fmt.Sprintf("Set account 1password secret key. Also `%s` en var can be used.", envVarOpSecretKey),
 			},
 			"password": {
 				Type:        types.StringType,
 				Optional:    true,
 				Sensitive:   true,
-				Description: "Set account 1password password",
+				Description: fmt.Sprintf("Set account 1password password. Also `%s` en var can be used.", envVarOpPassword),
 			},
 			"fake_storage_path": {
 				Type:        types.StringType,
 				Optional:    true,
-				Description: "File to a path where the provider will store the data as if it is 1password (this is used only on development)",
+				Description: fmt.Sprintf("File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `%s` en var can be used.", EnvVarOpFakeStoragePath),
 			},
 		},
 	}, nil
@@ -154,7 +171,7 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 	p.configured = true
 }
 
-func (p *provider) configureAddress(config providerData) (addres string, err error) {
+func (p *provider) configureAddress(config providerData) (string, error) {
 	if config.Address.Unknown {
 		return "", fmt.Errorf("cannot use unknown value as address")
 	}
@@ -174,7 +191,7 @@ func (p *provider) configureAddress(config providerData) (addres string, err err
 	return address, nil
 }
 
-func (p *provider) configureEmail(config providerData) (addres string, err error) {
+func (p *provider) configureEmail(config providerData) (string, error) {
 	if config.Email.Unknown {
 		return "", fmt.Errorf("cannot use unknown value as email")
 	}
@@ -194,7 +211,7 @@ func (p *provider) configureEmail(config providerData) (addres string, err error
 	return email, nil
 }
 
-func (p *provider) configureSecretKey(config providerData) (addres string, err error) {
+func (p *provider) configureSecretKey(config providerData) (string, error) {
 	if config.SecretKey.Unknown {
 		return "", fmt.Errorf("cannot use unknown value as secret key")
 	}
@@ -214,7 +231,7 @@ func (p *provider) configureSecretKey(config providerData) (addres string, err e
 	return secretKey, nil
 }
 
-func (p *provider) configurePassword(config providerData) (addres string, err error) {
+func (p *provider) configurePassword(config providerData) (string, error) {
 	if config.Password.Unknown {
 		return "", fmt.Errorf("cannot use unknown value as password")
 	}
@@ -234,7 +251,7 @@ func (p *provider) configurePassword(config providerData) (addres string, err er
 	return password, nil
 }
 
-func (p *provider) configureFakeStoragePath(config providerData) (addres string, err error) {
+func (p *provider) configureFakeStoragePath(config providerData) (string, error) {
 	// If not set get from env, the value has priority.
 	var fakePath string
 	if config.FakeStoragePath.Null {

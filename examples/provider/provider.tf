@@ -16,3 +16,19 @@ provider "onepasswordorg" {
   # Or use `OP_PASSWORD` env var.
   password = var.op_password
 }
+
+resource "onepasswordorg_user" "test" {
+  name  = "A test account"
+  email = "test@mycompany.com"
+}
+
+resource "onepasswordorg_group" "test" {
+  name        = "test-tf"
+  description = "Group for testing terraform cloud"
+}
+
+resource "onepasswordorg_group_member" "test_test" {
+  group_id = onepasswordorg_group.test.id
+  user_id  = onepasswordorg_user.test.id
+  role     = "member"
+}

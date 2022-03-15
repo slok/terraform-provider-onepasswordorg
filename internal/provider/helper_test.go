@@ -14,7 +14,7 @@ import (
 
 // getFakeRepoTmpFile returns a temp file that can be used for the fake
 // repository storage.
-// It returns the file path and a delete file function
+// It returns the file path and a delete file function.
 func getFakeRepoTmpFile(prefix string) (path string, delete func()) {
 	// Prepare fake storage.
 	f, err := os.CreateTemp("", prefix)
