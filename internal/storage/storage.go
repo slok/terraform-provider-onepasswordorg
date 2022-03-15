@@ -15,6 +15,7 @@ type Repository interface {
 
 	CreateGroup(ctx context.Context, group model.Group) (*model.Group, error)
 	GetGroupByID(ctx context.Context, id string) (*model.Group, error)
+	GetGroupByName(ctx context.Context, name string) (*model.Group, error)
 	EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error)
 	DeleteGroup(ctx context.Context, id string) error
 

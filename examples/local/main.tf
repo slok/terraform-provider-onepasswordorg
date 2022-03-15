@@ -31,3 +31,11 @@ data "onepasswordorg_user" "test" {
 output "user_test_id" {
   value = data.onepasswordorg_user.test
 }
+
+data "onepasswordorg_group" "test" {
+  name = onepasswordorg_group.test.name
+}
+
+output "group_test_id" {
+  value = data.onepasswordorg_group.test
+}

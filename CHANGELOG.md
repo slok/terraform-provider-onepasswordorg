@@ -5,6 +5,7 @@
 ### Added
 
 - User data source.
+- Group data source.
 
 ## Changed
 

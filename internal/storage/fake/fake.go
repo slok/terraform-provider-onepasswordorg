@@ -82,6 +82,9 @@ func (r *repository) GetUserByID(ctx context.Context, id string) (*model.User, e
 }
 
 func (r *repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
 	// Fake storage doesn't need optimization.
 	for _, u := range r.usersByID {
 		if u.Email == email {
@@ -161,6 +164,21 @@ func (r *repository) GetGroupByID(ctx context.Context, id string) (*model.Group,
 
 	return &group, nil
 }
+
+func (r *repository) GetGroupByName(ctx context.Context, name string) (*model.Group, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	// Fake storage doesn't need optimization.
+	for _, u := range r.groupsByID {
+		if u.Name == name {
+			return &u, nil
+		}
+	}
+
+	return nil, fmt.Errorf("group does not exists")
+}
+
 func (r *repository) EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error) {
 	r.storageMu.Lock()
 	defer r.storageMu.Unlock()

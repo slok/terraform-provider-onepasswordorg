@@ -64,7 +64,15 @@ data "onepasswordorg_user" "user4" {
   email = "user4@slok.dev"
 }
 
-output "user4_id" {
+output "user4" {
   value = data.onepasswordorg_user.user4
 }
 
+
+data "onepasswordorg_group" "group1" {
+  name = "group-1"
+}
+
+output "group1" {
+  value = data.onepasswordorg_group.group1
+}
