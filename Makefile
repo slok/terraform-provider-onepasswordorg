@@ -5,7 +5,7 @@ NAME=onepasswordorg
 BINARY=terraform-provider-${NAME}
 VERSION=0.0.1
 OS_ARCH=linux_amd64
-TESTARGS=-v -cover
+TESTARGS=-cover
 
 .PHONY: help
 help: ## Show this help

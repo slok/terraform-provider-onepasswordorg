@@ -2,6 +2,7 @@ package provider_test
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,42 +13,97 @@ import (
 
 // TestAccUserCreateDelete will check a user is created and deleted.
 func TestAccUserCreateDelete(t *testing.T) {
-	// Prepare fake storage.
-	path, delete := getFakeRepoTmpFile("TestAccUserCreateDelete")
-	defer delete()
-	_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
-
-	// Test tf data.
-	config := `
+	tests := map[string]struct {
+		config  string
+		expUser model.User
+		expErr  *regexp.Regexp
+	}{
+		"A correct configuration should execute correctly.": {
+			config: `
 resource "onepasswordorg_user" "test_user" {
   name  = "Test user"
   email = "testuser@test.test"
 }
-`
-	// Fake repo IDs are based on emails.
-	expUser := model.User{
-		ID:    "testuser@test.test",
-		Name:  "Test user",
-		Email: "testuser@test.test",
-	}
-
-	// Execute test.
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             assertUserDeletedOnFakeStorage(t, "testuser@test.test"), // Fake uses email as IDs.
-		Steps: []resource.TestStep{
-			{
-				Config: config,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					assertUserOnFakeStorage(t, &expUser),
-					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "id", "testuser@test.test"), // Fake uses email as IDs.
-					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "name", "Test user"),
-					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "email", "testuser@test.test"),
-				),
+`,
+			expUser: model.User{
+				ID:    "testuser@test.test",
+				Name:  "Test user",
+				Email: "testuser@test.test",
 			},
 		},
-	})
+
+		"An non set name should fail.": {
+			config: `
+resource "onepasswordorg_user" "test_user" {
+  email = "testuser@test.test"
+}
+`,
+			expErr: regexp.MustCompile("Missing required argument"),
+		},
+
+		"An empty user should fail.": {
+			config: `
+resource "onepasswordorg_user" "test_user" {
+  name  = ""
+  email = "testuser@test.test"
+}
+`,
+			expErr: regexp.MustCompile("Attribute can't be empty"),
+		},
+
+		"An non set email should fail.": {
+			config: `
+resource "onepasswordorg_user" "test_user" {
+  name  = "Test user"
+}
+`,
+			expErr: regexp.MustCompile("Missing required argument"),
+		},
+
+		"An empty email should fail.": {
+			config: `
+resource "onepasswordorg_user" "test_user" {
+  name  = "Test user"
+  email = ""
+}
+`,
+			expErr: regexp.MustCompile("Attribute can't be empty"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Prepare fake storage.
+			path, delete := getFakeRepoTmpFile("TestAccUserCreateDelete")
+			defer delete()
+			_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
+
+			// Prepare non error checks.
+			var checks resource.TestCheckFunc
+			if test.expErr == nil {
+				checks = resource.ComposeAggregateTestCheckFunc(
+					assertUserOnFakeStorage(t, &test.expUser),
+					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "id", test.expUser.ID),
+					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "name", test.expUser.Name),
+					resource.TestCheckResourceAttr("onepasswordorg_user.test_user", "email", test.expUser.Email),
+				)
+			}
+
+			// Execute test.
+			resource.Test(t, resource.TestCase{
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				CheckDestroy:             assertUserDeletedOnFakeStorage(t, "testuser@test.test"),
+				Steps: []resource.TestStep{
+					{
+						Config:      test.config,
+						Check:       checks,
+						ExpectError: test.expErr,
+					},
+				},
+			})
+		})
+	}
 }
 
 // TestAccUserUpdateName will check a user can update its name after its creation.

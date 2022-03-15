@@ -2,6 +2,7 @@ package provider_test
 
 import (
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -12,42 +13,92 @@ import (
 
 // TestAccGroupCreateDelete will check a group is created and deleted.
 func TestAccGroupCreateDelete(t *testing.T) {
-	// Prepare fake storage.
-	path, delete := getFakeRepoTmpFile("TestAccGroupCreateDelete")
-	defer delete()
-	_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
-
-	// Test tf data.
-	config := `
+	tests := map[string]struct {
+		config   string
+		expGroup model.Group
+		expErr   *regexp.Regexp
+	}{
+		"A correct configuration should execute correctly.": {
+			config: `
 resource "onepasswordorg_group" "test_group" {
   name  = "test-group"
   description = "Test group"
 }
-`
-	// Fake repo group IDs are based on name.
-	expGroup := model.Group{
-		ID:          "test-group",
-		Name:        "test-group",
-		Description: "Test group",
-	}
-
-	// Execute test.
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             assertGroupDeletedOnFakeStorage(t, "test-group"), // Fake uses name as IDs.
-		Steps: []resource.TestStep{
-			{
-				Config: config,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					assertGroupOnFakeStorage(t, &expGroup),
-					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "id", "test-group"), // Fake uses name as IDs.
-					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "name", "test-group"),
-					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "description", "Test group"),
-				),
+`,
+			expGroup: model.Group{
+				ID:          "test-group",
+				Name:        "test-group",
+				Description: "Test group",
 			},
 		},
-	})
+
+		"Description should fallback if not set.": {
+			config: `
+resource "onepasswordorg_group" "test_group" {
+  name  = "test-group"
+}
+`,
+			expGroup: model.Group{
+				ID:          "test-group",
+				Name:        "test-group",
+				Description: "Managed by Terraform",
+			},
+		},
+
+		"A non set name should fail.": {
+			config: `
+resource "onepasswordorg_group" "test_group" {
+  description = "Test group"
+}
+`,
+			expErr: regexp.MustCompile("Missing required argument"),
+		},
+
+		"An empty name should fail.": {
+			config: `
+resource "onepasswordorg_group" "test_group" {
+  description = "Test group"
+  name = ""
+}
+`,
+			expErr: regexp.MustCompile("Attribute can't be empty"),
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Prepare fake storage.
+			path, delete := getFakeRepoTmpFile("TestAccGroupCreateDelete")
+			defer delete()
+			_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
+
+			// Prepare non error checks.
+			var checks resource.TestCheckFunc
+			if test.expErr == nil {
+				checks = resource.ComposeAggregateTestCheckFunc(
+					assertGroupOnFakeStorage(t, &test.expGroup),
+					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "id", test.expGroup.ID),
+					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "name", test.expGroup.Name),
+					resource.TestCheckResourceAttr("onepasswordorg_group.test_group", "description", test.expGroup.Description),
+				)
+			}
+
+			// Execute test.
+			resource.Test(t, resource.TestCase{
+				PreCheck:                 func() { testAccPreCheck(t) },
+				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+				CheckDestroy:             assertGroupDeletedOnFakeStorage(t, "test-group"), // Fake uses name as IDs.
+				Steps: []resource.TestStep{
+					{
+						Config:      test.config,
+						Check:       checks,
+						ExpectError: test.expErr,
+					},
+				},
+			})
+
+		})
+	}
 }
 
 // TestAccGroupUpdateDescription will check a group can update its description after its creation.

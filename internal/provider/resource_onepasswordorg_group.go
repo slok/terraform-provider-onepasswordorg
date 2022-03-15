@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
 type resourceGroupType struct{}
@@ -30,13 +31,16 @@ group of users.
 			"name": {
 				Type:          types.StringType,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Required:      true,
 				Description:   "The name of the group.",
 			},
 			"description": {
-				Type:        types.StringType,
-				Optional:    true,
-				Description: "The description of the group.",
+				Type:          types.StringType,
+				Optional:      true,
+				Computed:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultString("Managed by Terraform")},
+				Description:   "The description of the group.",
 			},
 		},
 	}, nil
