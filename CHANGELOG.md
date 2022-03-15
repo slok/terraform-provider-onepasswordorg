@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- User data source.
+
+## Changed
+
+- Group member now doesn't need two tf applies to be have a role different than "member"
+
 ## [v0.1.0] - 2022-03-15
 
 ### Added

@@ -23,7 +23,7 @@ func (r Repository) CreateGroup(ctx context.Context, group model.Group) (*model.
 	}
 
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithCreate().WithGroupName(group.Name).WithDescription(group.Description)
+	cmdArgs.CreateArg().GroupArg().RawStrArg(group.Name).DescriptionFlag(group.Description)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -42,7 +42,7 @@ func (r Repository) CreateGroup(ctx context.Context, group model.Group) (*model.
 }
 func (r Repository) GetGroupByID(ctx context.Context, id string) (*model.Group, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithGet().WithGroupID(id)
+	cmdArgs.GetArg().GroupArg().RawStrArg(id)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -62,7 +62,7 @@ func (r Repository) GetGroupByID(ctx context.Context, id string) (*model.Group, 
 
 func (r Repository) GetGroupByName(ctx context.Context, name string) (*model.Group, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithGet().WithGroupName(name)
+	cmdArgs.GetArg().GroupArg().RawStrArg(name)
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -82,7 +82,7 @@ func (r Repository) GetGroupByName(ctx context.Context, name string) (*model.Gro
 
 func (r Repository) EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithEdit().WithGroupID(group.ID).WithDescription(group.Description)
+	cmdArgs.EditArg().GroupArg().RawStrArg(group.ID).DescriptionFlag(group.Description)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -93,7 +93,7 @@ func (r Repository) EnsureGroup(ctx context.Context, group model.Group) (*model.
 }
 func (r Repository) DeleteGroup(ctx context.Context, id string) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.WithDelete().WithGroupID(id)
+	cmdArgs.DeleteArg().GroupArg().RawStrArg(id)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {

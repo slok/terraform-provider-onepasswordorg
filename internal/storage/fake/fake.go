@@ -81,6 +81,17 @@ func (r *repository) GetUserByID(ctx context.Context, id string) (*model.User, e
 	return &user, nil
 }
 
+func (r *repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
+	// Fake storage doesn't need optimization.
+	for _, u := range r.usersByID {
+		if u.Email == email {
+			return &u, nil
+		}
+	}
+
+	return nil, fmt.Errorf("user does not exists")
+}
+
 func (r *repository) EnsureUser(ctx context.Context, user model.User) (*model.User, error) {
 	r.storageMu.Lock()
 	defer r.storageMu.Unlock()
@@ -247,7 +258,7 @@ type fakeStorage struct {
 }
 
 func dumpStorage(filePath string, fks fakeStorage) error {
-	data, err := json.Marshal(fks)
+	data, err := json.MarshalIndent(fks, "", "\t")
 	if err != nil {
 		return fmt.Errorf("could not marshal storage: %w", err)
 	}

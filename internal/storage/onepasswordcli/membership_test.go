@@ -21,11 +21,19 @@ func TestRepositoryEnsureMembership(t *testing.T) {
 		mock       func(m *onepasswordclimock.OpCli)
 		expErr     bool
 	}{
-		"Creating a group correctly, should return the data with the ID.": {
+		"Creating a membership correctly, should return the data with the ID.": {
 			membership: model.Membership{UserID: "test-00", GroupID: "group-00", Role: model.MembershipRoleMember},
 			mock: func(m *onepasswordclimock.OpCli) {
 				expCmd := `add user test-00 group-00 --role member`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
+			},
+		},
+
+		"If the user has wants a role other than member it shoul be called twice.": {
+			membership: model.Membership{UserID: "test-00", GroupID: "group-00", Role: model.MembershipRoleManager},
+			mock: func(m *onepasswordclimock.OpCli) {
+				expCmd := `add user test-00 group-00 --role manager`
+				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Twice().Return("", "", nil)
 			},
 		},
 

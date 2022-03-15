@@ -16,6 +16,12 @@ locals {
     "user1" : { name : "User number 1", email : "user1@slok.dev" },
     "user2" : { name : "User number 2", email : "user2@slok.dev" },
     "user3" : { name : "User number 3", email : "user3@slok.dev" },
+    "user4" : { name : "User number 4", email : "user4@slok.dev" },
+    "user5" : { name : "User number 5", email : "user5@slok.dev" },
+    "user6" : { name : "User number 6", email : "user6@slok.dev" },
+    "user7" : { name : "User number 7", email : "user7@slok.dev" },
+    "user8" : { name : "User number 8", email : "user8@slok.dev" },
+    "user9" : { name : "User number 9", email : "user9@slok.dev" },
   }
 
   groups = {
@@ -53,3 +59,12 @@ resource "onepasswordorg_group_member" "test" {
   user_id  = each.value.user_id
   role     = each.value.role
 }
+
+data "onepasswordorg_user" "user4" {
+  email = "user4@slok.dev"
+}
+
+output "user4_id" {
+  value = data.onepasswordorg_user.user4
+}
+

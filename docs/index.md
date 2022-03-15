@@ -88,8 +88,8 @@ resource "onepasswordorg_group_member" "test_test" {
 
 ### Optional
 
-- **address** (String) Set account 1password domain address (e.g: something.1password.com). Also `OP_ADDRESS` en var can be used.
-- **email** (String) Set account 1password email. Also `OP_EMAIL` en var can be used.
-- **fake_storage_path** (String) File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `OP_FAKE_STORAGE_PATH` en var can be used.
-- **password** (String, Sensitive) Set account 1password password. Also `OP_PASSWORD` en var can be used.
-- **secret_key** (String, Sensitive) Set account 1password secret key. Also `OP_SECRET_KEY` en var can be used.
+- **address** (String) Set account 1password domain address (e.g: something.1password.com). Also `OP_ADDRESS` env var can be used.
+- **email** (String) Set account 1password email. Also `OP_EMAIL` env var can be used.
+- **fake_storage_path** (String) File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `OP_FAKE_STORAGE_PATH` env var can be used.
+- **password** (String, Sensitive) Set account 1password password. Also `OP_PASSWORD` env var can be used.
+- **secret_key** (String, Sensitive) Set account 1password secret key. Also `OP_SECRET_KEY` env var can be used.
