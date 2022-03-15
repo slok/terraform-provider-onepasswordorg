@@ -65,7 +65,7 @@ func (d dataSourceUser) Read(ctx context.Context, req tfsdk.ReadDataSourceReques
 	}
 
 	// Get user.
-	user, err := d.p.repo.GetUserByEmail(ctx, tfUser.Email.Value)
+	user, err := d.p.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting user", "Could not get user, unexpected error: "+err.Error())
 		return

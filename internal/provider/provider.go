@@ -273,6 +273,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 
 func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourceType, diag.Diagnostics) {
 	return map[string]tfsdk.DataSourceType{
-		"onepasswordorg_user": dataSourceUserType{},
+		"onepasswordorg_user":  dataSourceUserType{},
+		"onepasswordorg_group": dataSourceGroupType{},
 	}, nil
 }
