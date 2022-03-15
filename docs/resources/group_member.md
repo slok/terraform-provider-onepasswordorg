@@ -39,8 +39,11 @@ resource "onepasswordorg_group_member" "test_group_user0" {
 ### Required
 
 - **group_id** (String) The group ID.
-- **role** (String) The role of the user on the group (can be `member` or `manager`).
 - **user_id** (String) The user ID.
+
+### Optional
+
+- **role** (String) The role of the user on the group (can be `member` or `manager`, by default member).
 
 ### Read-Only
 

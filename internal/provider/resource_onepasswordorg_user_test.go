@@ -21,7 +21,7 @@ func TestAccUserCreateDelete(t *testing.T) {
 	config := `
 resource "onepasswordorg_user" "test_user" {
   name  = "Test user"
-  email = "testuser@test.test"
+  email = ""
 }
 `
 	// Fake repo IDs are based on emails.

@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
 type resourceUserType struct{}
@@ -23,19 +24,20 @@ When a 1password user resources is created, it will be invited  by email.
 `,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-
 				Type:     types.StringType,
 				Computed: true,
 			},
 			"name": {
 				Type:        types.StringType,
 				Required:    true,
+				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Description: "The name of the user.",
 			},
 			"email": {
 				Type:          types.StringType,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Description:   "The email of the user.",
 			},
 		},

@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
+
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
 type resourceGroupMemberType struct{}
@@ -30,18 +32,23 @@ A 1password group membership will make a user part of a group with a role on tha
 				Type:          types.StringType,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Description:   "The user ID.",
 			},
 			"group_id": {
 				Type:          types.StringType,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
+				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Description:   "The group ID.",
 			},
 			"role": {
-				Type:        types.StringType,
-				Required:    true,
-				Description: "The role of the user on the group (can be `member` or `manager`).",
+				Type:          types.StringType,
+				Optional:      true,
+				Computed:      true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultString("member")},
+				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
+				Description:   "The role of the user on the group (can be `member` or `manager`, by default member).",
 			},
 		},
 	}, nil

@@ -27,13 +27,13 @@ locals {
   groups = {
     "group0" : { name : "group-0", description : "Group zero" },
     "group1" : { name : "group-1", description : "Group one" },
-    "group2" : { name : "group-2", description : "Group two" },
+    "group2" : { name : "group-2", description : null },
   }
 
   members = {
     "group0-user0" : { user_id : "user0", group_id : "group0", role : "member" },
     "group0-user1" : { user_id : "user1", group_id : "group0", role : "member" },
-    "group1-user0" : { user_id : "user0", group_id : "group1", role : "manager" },
+    "group1-user0" : { user_id : "user0", group_id : "group1", role : null },
     "group1-user2" : { user_id : "user2", group_id : "group1", role : "manager" },
   }
 }
@@ -61,7 +61,7 @@ resource "onepasswordorg_group_member" "test" {
 }
 
 data "onepasswordorg_user" "user4" {
-  email = "user4@slok.dev"
+  email = onepasswordorg_user.test["user4"].email
 }
 
 output "user4" {
@@ -69,10 +69,10 @@ output "user4" {
 }
 
 
-data "onepasswordorg_group" "group1" {
-  name = "group-1"
+data "onepasswordorg_group" "group2" {
+  name = onepasswordorg_group.test["group2"].name
 }
 
-output "group1" {
-  value = data.onepasswordorg_group.group1
+output "group2" {
+  value = data.onepasswordorg_group.group2
 }

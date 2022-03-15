@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## Changed
+
+- `onepasswordorg_group.description` now is optional and defaults to `Managed by Terraform`.
+- `onepasswordorg_group_member.role` now is optional and defaults to `member`.
+- `onepasswordorg_group_member.role` validates that is not set as empty string.
+- `onepasswordorg_group_member.user_id` validates that is not set as empty string.
+- `onepasswordorg_group_member.group_id` validates that is not set as empty string.
+- `onepasswordorg_group.name` validates that is not set as empty string.
+- `onepasswordorg_user.name` validates that is not set as empty string.
+- `onepasswordorg_email.name` validates that is not set as empty string.
+
+
+
 ## [v0.2.0] - 2022-03-15
 
 ### Added
