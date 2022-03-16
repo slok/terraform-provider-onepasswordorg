@@ -10,21 +10,21 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
-type dataSourceUserType struct{}
+type dataSourceVaultType struct{}
 
-func (d dataSourceUserType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (d dataSourceVaultType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
-Provides information about a 1password user.
+Provides information about a 1password vault.
 `,
 		Attributes: map[string]tfsdk.Attribute{
-			"email": {
-				Description: "The email of the user.",
+			"name": {
+				Description: "The name of the vault.",
 				Required:    true,
 				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Type:        types.StringType,
 			},
-			"name": {
+			"description": {
 				Computed: true,
 				Type:     types.StringType,
 			},
@@ -36,41 +36,41 @@ Provides information about a 1password user.
 	}, nil
 }
 
-func (d dataSourceUserType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
+func (d dataSourceVaultType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
 	prv := p.(*provider)
-	return dataSourceUser{
+	return dataSourceVault{
 		p: *prv,
 	}, nil
 }
 
-type dataSourceUser struct {
+type dataSourceVault struct {
 	p provider
 }
 
-func (d dataSourceUser) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
+func (d dataSourceVault) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
 	if !d.p.configured {
 		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
 		return
 	}
 
 	// Retrieve values.
-	var tfUser User
-	diags := req.Config.Get(ctx, &tfUser)
+	var tfVault Vault
+	diags := req.Config.Get(ctx, &tfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get user.
-	user, err := d.p.repo.GetUserByEmail(ctx, tfUser.Email.Value)
+	// Get resource.
+	vault, err := d.p.repo.GetVaultByName(ctx, tfVault.Name.Value)
 	if err != nil {
-		resp.Diagnostics.AddError("Error getting user", "Could not get user, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error getting vault", "Could not get vault, unexpected error: "+err.Error())
 		return
 	}
 
-	newTfUser := mapModelToTfUser(*user)
+	newTfVault := mapModelToTfVault(*vault)
 
-	diags = resp.State.Set(ctx, newTfUser)
+	diags = resp.State.Set(ctx, newTfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
