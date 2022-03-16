@@ -19,6 +19,11 @@
 - `onepasswordorg_user.name` validates that is not set as empty string.
 - `onepasswordorg_email.name` validates that is not set as empty string.
 - Use go 1.18.
+- Use v2.0.0 op cli.
+
+## Deleted
+
+- Support v1.x op cli
 
 ## [v0.2.0] - 2022-03-15
 

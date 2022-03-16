@@ -30,7 +30,7 @@ func NewOpCli(customCliPath, address, email, secretKey, password string) (OpCli,
 	}
 
 	// Login.
-	cmd := exec.Command(binPath, "signin", address, email, secretKey, "--output=raw", "--shorthand=terraform")
+	cmd := exec.Command(binPath, "account", "add", "--address", address, "--email", email, "--secret-key", secretKey, "--shorthand", "terraform", "--signin", "--raw")
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err

@@ -25,11 +25,11 @@ func TestRepositoryCreateGroup(t *testing.T) {
 		"Creating a group correctly, should return the data with the ID.": {
 			group: model.Group{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
+				expCmd := `group get test-00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("group doesn't exist"))
 
-				expCmd = `create group test-00  --description Test00`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
+				expCmd = `group create test-00 --description Test00 --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expGroup: &model.Group{
@@ -42,8 +42,8 @@ func TestRepositoryCreateGroup(t *testing.T) {
 		"Creating a group that already exists, should  fail.": {
 			group: model.Group{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
+				expCmd := `group get test-00 --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expErr: true,
@@ -52,10 +52,10 @@ func TestRepositoryCreateGroup(t *testing.T) {
 		"Having an error while calling the create op CLI action, should fail.": {
 			group: model.Group{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
+				expCmd := `group get test-00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("group doesn't exist"))
 
-				expCmd = `create group test-00  --description Test00`
+				expCmd = `group create test-00 --description Test00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -96,8 +96,8 @@ func TestRepositoryGetGroupByID(t *testing.T) {
 		"Getting a group correctly, should return the group data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-id`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T06:48:26Z","updatedAt":"2022-03-14T06:48:26Z","activeKeysetUuid":"231321321","attrVersion":1,"state":"A","permissions":16,"pubKey":{"alg":"RSA-OAEP","kid":"3213213213","ext":true,"e":"AQAB","n":"432443","key_ops":["encrypt"],"kty":"RSA"}}`
+				expCmd := `group get test-id --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expGroup: &model.Group{
@@ -110,7 +110,7 @@ func TestRepositoryGetGroupByID(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-id`
+				expCmd := `group get test-id --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -151,7 +151,7 @@ func TestRepositoryEnsureGroup(t *testing.T) {
 		"Updating a group correctly, should update the group data.": {
 			group: model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit group test-id --description Test00`
+				expCmd := `group edit test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 			expGroup: &model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
@@ -160,7 +160,7 @@ func TestRepositoryEnsureGroup(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			group: model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit group test-id --description Test00`
+				expCmd := `group edit test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -200,7 +200,7 @@ func TestRepositoryDeleteGroup(t *testing.T) {
 		"Delete a group correctly, should return the group data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete group test-id`
+				expCmd := `group delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -208,7 +208,7 @@ func TestRepositoryDeleteGroup(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete group test-id`
+				expCmd := `group delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
