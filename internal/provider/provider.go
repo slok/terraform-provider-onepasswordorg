@@ -268,6 +268,7 @@ func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceTyp
 		"onepasswordorg_user":         resourceUserType{},
 		"onepasswordorg_group":        resourceGroupType{},
 		"onepasswordorg_group_member": resourceGroupMemberType{},
+		"onepasswordorg_vault":        resourceVaultType{},
 	}, nil
 }
 

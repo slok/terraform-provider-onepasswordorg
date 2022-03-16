@@ -13,15 +13,12 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
-type resourceGroupType struct{}
+type resourceVaultType struct{}
 
-func (r resourceGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (r resourceVaultType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
-Provides a Group resource.
-
-A 1password group is like a team that can contain people and can be used to give access to vaults as a
-group of users.
+Provides a vault resource.
 `,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -30,105 +27,105 @@ group of users.
 			},
 			"name": {
 				Type:          types.StringType,
+				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
 				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Required:      true,
-				Description:   "The name of the group.",
+				Description:   "The name of the vault.",
 			},
 			"description": {
 				Type:          types.StringType,
 				Optional:      true,
 				Computed:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultString("Managed by Terraform")},
-				Description:   "The description of the group.",
+				Description:   "The description of the vault.",
 			},
 		},
 	}, nil
 }
 
-func (r resourceGroupType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
+func (r resourceVaultType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
 	prv := p.(*provider)
-	return resourceGroup{
+	return resourceVault{
 		p: *prv,
 	}, nil
 }
 
-type resourceGroup struct {
+type resourceVault struct {
 	p provider
 }
 
-func (r resourceGroup) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
+func (r resourceVault) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
 		return
 	}
 
 	// Retrieve values from plan.
-	var tfGroup Group
-	diags := req.Plan.Get(ctx, &tfGroup)
+	var tfVault Vault
+	diags := req.Plan.Get(ctx, &tfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Create group.
-	g := mapTfToModelGroup(tfGroup)
-	newGroup, err := r.p.repo.CreateGroup(ctx, g)
+	// Create vault.
+	v := mapTfToModelVault(tfVault)
+	newVault, err := r.p.repo.CreateVault(ctx, v)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating group", "Could not create group, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error creating vault", "Could not create vault, unexpected error: "+err.Error())
 		return
 	}
 
-	// Map group to tf model.
-	newTfGroup := mapModelToTfGroup(*newGroup)
+	// Map to tf model.
+	newTfVault := mapModelToTfVault(*newVault)
 
-	diags = resp.State.Set(ctx, newTfGroup)
+	diags = resp.State.Set(ctx, newTfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-func (r resourceGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
+func (r resourceVault) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
 		return
 	}
 
 	// Retrieve values from plan.
-	var tfGroup Group
-	diags := req.State.Get(ctx, &tfGroup)
+	var tfVault Vault
+	diags := req.State.Get(ctx, &tfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get group.
-	id := tfGroup.ID.Value
-	group, err := r.p.repo.GetGroupByID(ctx, id)
+	// Get resource.
+	id := tfVault.ID.Value
+	vault, err := r.p.repo.GetVaultByID(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading group", fmt.Sprintf("Could not get group %q, unexpected error: %s", id, err.Error()))
+		resp.Diagnostics.AddError("Error reading vault", fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
 		return
 	}
 
-	// Map group to tf model.
-	readTfGroup := mapModelToTfGroup(*group)
+	// Map resource to tf model.
+	readTfVault := mapModelToTfVault(*vault)
 
-	diags = resp.State.Set(ctx, readTfGroup)
+	diags = resp.State.Set(ctx, readTfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
+func (r resourceVault) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
 		return
 	}
 
 	// Get plan values.
-	var plan Group
+	var plan Vault
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -136,7 +133,7 @@ func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 	}
 
 	// Get current state.
-	var state Group
+	var state Vault
 	diags = req.State.Get(ctx, &state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -144,44 +141,44 @@ func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 	}
 
 	// Use plan group as the new data and set ID from state.
-	g := mapTfToModelGroup(plan)
-	g.ID = state.ID.Value
+	v := mapTfToModelVault(plan)
+	v.ID = state.ID.Value
 
-	newGroup, err := r.p.repo.EnsureGroup(ctx, g)
+	newVault, err := r.p.repo.EnsureVault(ctx, v)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating group", "Could not update group, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error updating vault", "Could not update vault, unexpected error: "+err.Error())
 		return
 	}
 
-	// Map group to tf model.
-	readTfGroup := mapModelToTfGroup(*newGroup)
+	// Map vault to tf model.
+	readTfVault := mapModelToTfVault(*newVault)
 
-	diags = resp.State.Set(ctx, readTfGroup)
+	diags = resp.State.Set(ctx, readTfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 }
 
-func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
+func (r resourceVault) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
 	if !r.p.configured {
 		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
 		return
 	}
 
 	// Retrieve values from plan.
-	var tfGroup Group
-	diags := req.State.Get(ctx, &tfGroup)
+	var tfVault Vault
+	diags := req.State.Get(ctx, &tfVault)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get group.
-	id := tfGroup.ID.Value
-	err := r.p.repo.DeleteGroup(ctx, id)
+	// Delete resource.
+	id := tfVault.ID.Value
+	err := r.p.repo.DeleteVault(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting group", fmt.Sprintf("Could not delete group %q, unexpected error: %s", id, err.Error()))
+		resp.Diagnostics.AddError("Error deleting vault", fmt.Sprintf("Could not delete vault %q, unexpected error: %s", id, err.Error()))
 		return
 	}
 
@@ -189,23 +186,23 @@ func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceGroup) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
+func (r resourceVault) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 	// Save the import identifier in the id attribute.
 	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
 }
 
-func mapTfToModelGroup(g Group) model.Group {
-	return model.Group{
-		ID:          g.ID.Value,
-		Name:        g.Name.Value,
-		Description: g.Description.Value,
+func mapTfToModelVault(v Vault) model.Vault {
+	return model.Vault{
+		ID:          v.ID.Value,
+		Name:        v.Name.Value,
+		Description: v.Description.Value,
 	}
 }
 
-func mapModelToTfGroup(g model.Group) Group {
-	return Group{
-		ID:          types.String{Value: g.ID},
-		Name:        types.String{Value: g.Name},
-		Description: types.String{Value: g.Description},
+func mapModelToTfVault(u model.Vault) Vault {
+	return Vault{
+		ID:          types.String{Value: u.ID},
+		Name:        types.String{Value: u.Name},
+		Description: types.String{Value: u.Description},
 	}
 }

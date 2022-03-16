@@ -58,6 +58,11 @@ func (o *onePasswordCliCmd) GroupArg() *onePasswordCliCmd {
 	return o
 }
 
+func (o *onePasswordCliCmd) VaultArg() *onePasswordCliCmd {
+	o.args = append(o.args, "vault")
+	return o
+}
+
 func (o *onePasswordCliCmd) RawStrArg(s string) *onePasswordCliCmd {
 	o.args = append(o.args, s)
 	return o

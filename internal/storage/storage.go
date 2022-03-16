@@ -19,6 +19,12 @@ type Repository interface {
 	EnsureGroup(ctx context.Context, group model.Group) (*model.Group, error)
 	DeleteGroup(ctx context.Context, id string) error
 
+	CreateVault(ctx context.Context, vault model.Vault) (*model.Vault, error)
+	GetVaultByID(ctx context.Context, id string) (*model.Vault, error)
+	GetVaultByName(ctx context.Context, name string) (*model.Vault, error)
+	EnsureVault(ctx context.Context, vault model.Vault) (*model.Vault, error)
+	DeleteVault(ctx context.Context, id string) error
+
 	EnsureMembership(ctx context.Context, membership model.Membership) error
 	DeleteMembership(ctx context.Context, membership model.Membership) error
 	GetMembershipByID(ctx context.Context, groupID, userID string) (*model.Membership, error)

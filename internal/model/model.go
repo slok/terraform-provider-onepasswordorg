@@ -14,6 +14,13 @@ type Group struct {
 	Description string
 }
 
+// Vault represents a 1password vault.
+type Vault struct {
+	ID          string
+	Name        string
+	Description string
+}
+
 // MembershipRole represents a 1password user membership role.
 type MembershipRole int
 

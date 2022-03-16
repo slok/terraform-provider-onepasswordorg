@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Vault resource.
+
 ## Changed
 
 - `onepasswordorg_group.description` now is optional and defaults to `Managed by Terraform`.

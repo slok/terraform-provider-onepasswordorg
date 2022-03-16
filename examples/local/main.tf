@@ -24,6 +24,11 @@ resource "onepasswordorg_group_member" "test" {
   role     = "manager"
 }
 
+resource "onepasswordorg_vault" "test" {
+  name        = "test-tf"
+  description = "Terraform test vault"
+}
+
 data "onepasswordorg_user" "test" {
   email = onepasswordorg_user.test.email
 }

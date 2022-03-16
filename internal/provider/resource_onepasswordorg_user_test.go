@@ -32,7 +32,7 @@ resource "onepasswordorg_user" "test_user" {
 			},
 		},
 
-		"An non set name should fail.": {
+		"A non set name should fail.": {
 			config: `
 resource "onepasswordorg_user" "test_user" {
   email = "testuser@test.test"
@@ -51,7 +51,7 @@ resource "onepasswordorg_user" "test_user" {
 			expErr: regexp.MustCompile("Attribute can't be empty"),
 		},
 
-		"An non set email should fail.": {
+		"A non set email should fail.": {
 			config: `
 resource "onepasswordorg_user" "test_user" {
   name  = "Test user"
@@ -93,7 +93,7 @@ resource "onepasswordorg_user" "test_user" {
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertUserDeletedOnFakeStorage(t, "testuser@test.test"),
+				CheckDestroy:             assertUserDeletedOnFakeStorage(t, test.expUser.Email),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,

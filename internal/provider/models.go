@@ -16,6 +16,12 @@ type Group struct {
 	Description types.String `tfsdk:"description"`
 }
 
+type Vault struct {
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
+}
+
 type Member struct {
 	ID      types.String `tfsdk:"id"`
 	UserID  types.String `tfsdk:"user_id"`

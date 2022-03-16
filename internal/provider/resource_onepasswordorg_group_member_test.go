@@ -202,32 +202,3 @@ resource "onepasswordorg_group_member" "test_member" {
 		},
 	})
 }
-
-// TestAccGroupMemberInvalidRole will check a group member doesn't allow invalid roles.
-func TestAccGroupMemberInvalidRole(t *testing.T) {
-	// Prepare fake storage.
-	path, delete := getFakeRepoTmpFile("TestAccGroupMemberInvalidRole")
-	defer delete()
-	_ = os.Setenv(provider.EnvVarOpFakeStoragePath, path)
-
-	// Test tf data.
-	config := `
-resource "onepasswordorg_group_member" "test_member" {
-  group_id = "test-group-id"
-  user_id  = "test-user-id"
-  role     = "invalid-role"
-}
-`
-	// Execute test.
-	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-		CheckDestroy:             assertGroupMemberDeletedOnFakeStorage(t, "test-group-id", "test-user-id"), // Fake uses group and user IDs.
-		Steps: []resource.TestStep{
-			{
-				Config:      config,
-				ExpectError: regexp.MustCompile(`the role "[^"]*" is invalid`),
-			},
-		},
-	})
-}
