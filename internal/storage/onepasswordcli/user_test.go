@@ -25,8 +25,8 @@ func TestRepositoryCreateUser(t *testing.T) {
 		"Creating a user correctly, should return the data with the ID.": {
 			user: model.User{Email: "test@test.io", Name: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `create user test@test.io  Test00`
-				stdout := `{"uuid":"1234567890","createdAt":"2022-03-13T18:49:59Z","updatedAt":"2022-03-13T18:49:59Z","lastAuthAt":"0001-01-01T00:00:00Z","email":"test@test.io","firstName":"Test00","lastName":"","name":"Test00"}`
+				expCmd := `user provision --email test@test.io --name Test00 --format json`
+				stdout := `{"id":"1234567890","email":"test@test.io","name":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expUser: &model.User{
@@ -39,7 +39,7 @@ func TestRepositoryCreateUser(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			user: model.User{Email: "test@test.io", Name: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `create user test@test.io  Test00`
+				expCmd := `user provision --email test@test.io --name Test00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -80,8 +80,8 @@ func TestRepositoryGetUserByID(t *testing.T) {
 		"Getting a user correctly, should return the user data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get user test-id`
-				stdout := `{"uuid":"1234567890","createdAt":"2021-09-08T07:45:22Z","updatedAt":"2021-09-08T07:47:02Z","lastAuthAt":"2022-03-12T14:23:17Z","email":"test@test.io","firstName":"Test00","lastName":"","name":"Test00","attrVersion":3,"keysetVersion":4,"state":"A","type":"R","avatar":"","language":"en","accountKeyFormat":"","accountKeyUuid":"","combinedPermissions":98765432}`
+				expCmd := `user get test-id --format json`
+				stdout := `{"id":"1234567890","email":"test@test.io","name":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expUser: &model.User{
@@ -94,7 +94,7 @@ func TestRepositoryGetUserByID(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get user test-id`
+				expCmd := `user get test-id --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -135,8 +135,8 @@ func TestRepositoryGetUserByEmail(t *testing.T) {
 		"Getting a user correctly, should return the user data.": {
 			email: "test@test.io",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get user test@test.io`
-				stdout := `{"uuid":"1234567890","createdAt":"2021-09-08T07:45:22Z","updatedAt":"2021-09-08T07:47:02Z","lastAuthAt":"2022-03-12T14:23:17Z","email":"test@test.io","firstName":"Test00","lastName":"","name":"Test00","attrVersion":3,"keysetVersion":4,"state":"A","type":"R","avatar":"","language":"en","accountKeyFormat":"","accountKeyUuid":"","combinedPermissions":98765432}`
+				expCmd := `user get test@test.io --format json`
+				stdout := `{"id":"1234567890","email":"test@test.io","name":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expUser: &model.User{
@@ -149,7 +149,7 @@ func TestRepositoryGetUserByEmail(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			email: "test@test.io",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get user test@test.io`
+				expCmd := `user get test@test.io --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -190,7 +190,7 @@ func TestRepositoryEnsureUser(t *testing.T) {
 		"Updating a user correctly, should update the user data.": {
 			user: model.User{ID: "test-id", Email: "test@test.io", Name: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit user test-id --name Test00`
+				expCmd := `user edit test-id --name Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 			expUser: &model.User{ID: "test-id", Email: "test@test.io", Name: "Test00"},
@@ -199,7 +199,7 @@ func TestRepositoryEnsureUser(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			user: model.User{ID: "test-id", Email: "test@test.io", Name: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit user test-id --name Test00`
+				expCmd := `user edit test-id --name Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -239,7 +239,7 @@ func TestRepositoryDeleteUser(t *testing.T) {
 		"Delete a user correctly, should return the user data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete user test-id`
+				expCmd := `user delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -247,7 +247,7 @@ func TestRepositoryDeleteUser(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete user test-id`
+				expCmd := `user delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,

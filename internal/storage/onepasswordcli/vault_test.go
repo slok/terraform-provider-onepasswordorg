@@ -25,11 +25,11 @@ func TestRepositoryCreateVault(t *testing.T) {
 		"Creating a vault correctly, should return the data with the ID.": {
 			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get vault test-00`
+				expCmd := `vault get test-00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("vault doesn't exist"))
 
-				expCmd = `create vault test-00 --description Test00`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
+				expCmd = `vault create test-00 --description Test00 --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expVault: &model.Vault{
@@ -42,8 +42,8 @@ func TestRepositoryCreateVault(t *testing.T) {
 		"Creating a vault that already exists, should  fail.": {
 			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get vault test-00`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
+				expCmd := `vault get test-00 --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expErr: true,
@@ -52,10 +52,10 @@ func TestRepositoryCreateVault(t *testing.T) {
 		"Having an error while calling the create op CLI action, should fail.": {
 			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get vault test-00`
+				expCmd := `vault get test-00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("vault doesn't exist"))
 
-				expCmd = `create vault test-00 --description Test00`
+				expCmd = `vault create test-00 --description Test00 --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -96,8 +96,8 @@ func TestRepositoryGetVaultByID(t *testing.T) {
 		"Getting a vault correctly, should return the vault data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get vault test-id`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00"}`
+				expCmd := `vault get test-id --format json`
+				stdout := `{"id":"1234567890","name":"test-00","description":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expVault: &model.Vault{
@@ -110,7 +110,7 @@ func TestRepositoryGetVaultByID(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get vault test-id`
+				expCmd := `vault get test-id --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -151,7 +151,7 @@ func TestRepositoryEnsureVault(t *testing.T) {
 		"Updating a vault correctly, should update the user data.": {
 			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit vault test-id --description Test00`
+				expCmd := `vault edit test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 			expVault: &model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
@@ -160,7 +160,7 @@ func TestRepositoryEnsureVault(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit vault test-id --description Test00`
+				expCmd := `vault edit test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -200,7 +200,7 @@ func TestRepositoryDeleteVault(t *testing.T) {
 		"Delete a vault correctly, should return the vault data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete vault test-id`
+				expCmd := `vault delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -208,7 +208,7 @@ func TestRepositoryDeleteVault(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete vault test-id`
+				expCmd := `vault delete test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,

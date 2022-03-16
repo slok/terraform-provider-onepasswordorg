@@ -8,15 +8,9 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 )
 
-type opUser struct {
-	ID    string `json:"uuid"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
-}
-
 func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.CreateArg().UserArg().RawStrArg(user.Email).RawStrArg(user.Name)
+	cmdArgs.UserArg().ProvisionArg().EmailFlag(user.Email).NameFlag(user.Name).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -36,7 +30,7 @@ func (r Repository) CreateUser(ctx context.Context, user model.User) (*model.Use
 
 func (r Repository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.GetArg().UserArg().RawStrArg(id)
+	cmdArgs.UserArg().GetArg().RawStrArg(id).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -56,7 +50,7 @@ func (r Repository) GetUserByID(ctx context.Context, id string) (*model.User, er
 
 func (r Repository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.GetArg().UserArg().RawStrArg(email)
+	cmdArgs.UserArg().GetArg().RawStrArg(email).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -76,7 +70,7 @@ func (r Repository) GetUserByEmail(ctx context.Context, email string) (*model.Us
 
 func (r Repository) EnsureUser(ctx context.Context, user model.User) (*model.User, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.EditArg().UserArg().RawStrArg(user.ID).NameFlag(user.Name)
+	cmdArgs.UserArg().EditArg().RawStrArg(user.ID).NameFlag(user.Name)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -88,7 +82,7 @@ func (r Repository) EnsureUser(ctx context.Context, user model.User) (*model.Use
 
 func (r Repository) DeleteUser(ctx context.Context, id string) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.DeleteArg().UserArg().RawStrArg(id)
+	cmdArgs.UserArg().DeleteArg().RawStrArg(id)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -96,6 +90,12 @@ func (r Repository) DeleteUser(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+type opUser struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }
 
 func mapOpToModelUser(u opUser) model.User {

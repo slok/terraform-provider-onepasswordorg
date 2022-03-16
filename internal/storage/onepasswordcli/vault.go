@@ -17,7 +17,7 @@ func (r Repository) CreateVault(ctx context.Context, vault model.Vault) (*model.
 	}
 
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.CreateArg().VaultArg().RawStrArg(vault.Name).DescriptionFlag(vault.Description)
+	cmdArgs.VaultArg().CreateArg().RawStrArg(vault.Name).DescriptionFlag(vault.Description).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -37,7 +37,7 @@ func (r Repository) CreateVault(ctx context.Context, vault model.Vault) (*model.
 
 func (r Repository) GetVaultByID(ctx context.Context, id string) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.GetArg().VaultArg().RawStrArg(id)
+	cmdArgs.VaultArg().GetArg().RawStrArg(id).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -57,7 +57,7 @@ func (r Repository) GetVaultByID(ctx context.Context, id string) (*model.Vault, 
 
 func (r Repository) GetVaultByName(ctx context.Context, name string) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.GetArg().VaultArg().RawStrArg(name)
+	cmdArgs.VaultArg().GetArg().RawStrArg(name).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -77,7 +77,7 @@ func (r Repository) GetVaultByName(ctx context.Context, name string) (*model.Vau
 
 func (r Repository) EnsureVault(ctx context.Context, vault model.Vault) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.EditArg().VaultArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description)
+	cmdArgs.VaultArg().EditArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -89,7 +89,7 @@ func (r Repository) EnsureVault(ctx context.Context, vault model.Vault) (*model.
 
 func (r Repository) DeleteVault(ctx context.Context, id string) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.DeleteArg().VaultArg().RawStrArg(id)
+	cmdArgs.VaultArg().DeleteArg().RawStrArg(id)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -100,9 +100,9 @@ func (r Repository) DeleteVault(ctx context.Context, id string) error {
 }
 
 type opVault struct {
-	ID          string `json:"uuid"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
-	Description string `json:"desc"`
+	Description string `json:"description"`
 }
 
 func mapOpToModeVault(v opVault) model.Vault {

@@ -15,7 +15,7 @@ on:
     tags:
       - "v*"
 env:
-  OP_CLI_VERSION: 1.12.4
+  OP_CLI_VERSION: 2.0.0
 
 jobs:
   goreleaser:
@@ -43,7 +43,7 @@ jobs:
       - name: Download OP cli (to embed on the binary)
         run: |
             cd /tmp
-            curl https://cache.agilebits.com/dist/1P/op/pkg/v${OP_CLI_VERSION}/op_linux_amd64_v${OP_CLI_VERSION}.zip -o ./op.zip && unzip ./op.zip
+            curl https://cache.agilebits.com/dist/1P/op2/pkg/v${OP_CLI_VERSION}/op_linux_amd64_v${OP_CLI_VERSION}.zip -o ./op.zip && unzip ./op.zip
             cd -
             sudo mv /tmp/op ./internal/storage/onepasswordcli/op-cli-tfe/op
 

@@ -24,7 +24,7 @@ func TestRepositoryEnsureMembership(t *testing.T) {
 		"Creating a membership correctly, should return the data with the ID.": {
 			membership: model.Membership{UserID: "test-00", GroupID: "group-00", Role: model.MembershipRoleMember},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `add user test-00 group-00 --role member`
+				expCmd := `group user grant --user test-00 --group group-00 --role member`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -32,7 +32,7 @@ func TestRepositoryEnsureMembership(t *testing.T) {
 		"If the user has wants a role other than member it shoul be called twice.": {
 			membership: model.Membership{UserID: "test-00", GroupID: "group-00", Role: model.MembershipRoleManager},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `add user test-00 group-00 --role manager`
+				expCmd := `group user grant --user test-00 --group group-00 --role manager`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Twice().Return("", "", nil)
 			},
 		},
@@ -40,7 +40,7 @@ func TestRepositoryEnsureMembership(t *testing.T) {
 		"Having an error while calling the create op CLI action, should fail.": {
 			membership: model.Membership{UserID: "test-00", GroupID: "group-00", Role: model.MembershipRoleMember},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `add user test-00 group-00 --role member`
+				expCmd := `group user grant --user test-00 --group group-00 --role member`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -83,8 +83,8 @@ func TestRepositoryGetMembershipByID(t *testing.T) {
 			userID:  "test-user-00",
 			groupID: "group-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `list users --group group-id`
-				stdout := `[{"uuid":"test-user-00","firstName":"Test00","lastName":"","name":"Test00","email":"test0@slok.dev","avatar":"","state":"A","type":"R","role":"MANAGER"},{"uuid":"test-user-01","firstName":"Test01","lastName":"","name":"Tst01","email":"test01@slok.dev","avatar":"","state":"3","type":"R","role":"MEMBER"}]`
+				expCmd := `user list --group group-id --format json`
+				stdout := `[{"id":"test-user-00","name":"Test00","email":"test0@slok.dev","role":"MANAGER"},{"id":"test-user-01","name":"Tst01","email":"test01@slok.dev","role":"MEMBER"}]`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expMembership: &model.Membership{
@@ -98,8 +98,8 @@ func TestRepositoryGetMembershipByID(t *testing.T) {
 			userID:  "test-user-02",
 			groupID: "group-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `list users --group group-id`
-				stdout := `[{"uuid":"test-user-00","firstName":"Test00","lastName":"","name":"Test00","email":"test0@slok.dev","avatar":"","state":"A","type":"R","role":"MANAGER"},{"uuid":"test-user-01","firstName":"Test01","lastName":"","name":"Tst01","email":"test01@slok.dev","avatar":"","state":"3","type":"R","role":"MEMBER"}]`
+				expCmd := `user list --group group-id --format json`
+				stdout := `[{"id":"test-user-00","name":"Test00","email":"test0@slok.dev","role":"MANAGER"},{"id":"test-user-01","name":"Tst01","email":"test01@slok.dev","role":"MEMBER"}]`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
 			expErr: true,
@@ -109,7 +109,7 @@ func TestRepositoryGetMembershipByID(t *testing.T) {
 			userID:  "test-id",
 			groupID: "group-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `list users --group group-id`
+				expCmd := `user list --group group-id --format json`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -149,7 +149,7 @@ func TestRepositoryDeleteMembership(t *testing.T) {
 		"Delete a membership correctly, should delete the membership.": {
 			membership: model.Membership{UserID: "user-id", GroupID: "group-id"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `remove user user-id group-id`
+				expCmd := `group user revoke --user user-id --group group-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -157,7 +157,7 @@ func TestRepositoryDeleteMembership(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			membership: model.Membership{UserID: "user-id", GroupID: "group-id"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `remove user user-id group-id`
+				expCmd := `group user revoke --user user-id --group group-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,

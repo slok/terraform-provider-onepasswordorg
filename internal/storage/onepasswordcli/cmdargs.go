@@ -8,11 +8,6 @@ func (o *onePasswordCliCmd) GetArgs() []string {
 	return o.args
 }
 
-func (o *onePasswordCliCmd) AddArg() *onePasswordCliCmd {
-	o.args = append(o.args, "add")
-	return o
-}
-
 func (o *onePasswordCliCmd) CreateArg() *onePasswordCliCmd {
 	o.args = append(o.args, "create")
 	return o
@@ -33,18 +28,23 @@ func (o *onePasswordCliCmd) ListArg() *onePasswordCliCmd {
 	return o
 }
 
+func (o *onePasswordCliCmd) ProvisionArg() *onePasswordCliCmd {
+	o.args = append(o.args, "provision")
+	return o
+}
+
 func (o *onePasswordCliCmd) DeleteArg() *onePasswordCliCmd {
 	o.args = append(o.args, "delete")
 	return o
 }
 
-func (o *onePasswordCliCmd) RemoveArg() *onePasswordCliCmd {
-	o.args = append(o.args, "remove")
+func (o *onePasswordCliCmd) GrantArg() *onePasswordCliCmd {
+	o.args = append(o.args, "grant")
 	return o
 }
 
-func (o *onePasswordCliCmd) UsersArg() *onePasswordCliCmd {
-	o.args = append(o.args, "users")
+func (o *onePasswordCliCmd) RevokeArg() *onePasswordCliCmd {
+	o.args = append(o.args, "revoke")
 	return o
 }
 
@@ -92,5 +92,20 @@ func (o *onePasswordCliCmd) RoleFlag(role string) *onePasswordCliCmd {
 
 func (o *onePasswordCliCmd) GroupFlag(id string) *onePasswordCliCmd {
 	o.args = append(o.args, "--group", id)
+	return o
+}
+
+func (o *onePasswordCliCmd) UserFlag(id string) *onePasswordCliCmd {
+	o.args = append(o.args, "--user", id)
+	return o
+}
+
+func (o *onePasswordCliCmd) FormatJSONFlag() *onePasswordCliCmd {
+	o.args = append(o.args, "--format", "json")
+	return o
+}
+
+func (o *onePasswordCliCmd) EmailFlag(email string) *onePasswordCliCmd {
+	o.args = append(o.args, "--email", email)
 	return o
 }

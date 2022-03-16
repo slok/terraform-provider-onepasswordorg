@@ -45,7 +45,7 @@ grouping users into teams (groups in 1password).
 
 ## Requirements
 
-This provider needs [op](https://1password.com/downloads/command-line/) Cli, thats why it doesn't use 1password connect
+This provider needs [op](https://1password.com/downloads/command-line/) v2.x Cli, thats why it doesn't use 1password connect
 API and needs a real 1password account as the authentication.
 
 ## Authentication

@@ -21,7 +21,9 @@ To manage secrets use the [official 1password](https://registry.terraform.io/pro
 
 1password connect API doesn't allow managing resources other than secrets. Thats why this provider needs the `op` CLI.
 
-The `op` CLI needs a real user in onepassword to be used, so the recomendation to automate things using this provider
+It needs the new `op` >= `V2.x` CLI.
+
+The `op` CLI needs a real user in onepassword to be used, so the recommendation to automate things using this provider
 is to create a separate account only for automation purposes.
 
 You will need the secret key and password of that user account.

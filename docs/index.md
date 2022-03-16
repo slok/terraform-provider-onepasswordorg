@@ -8,7 +8,7 @@ description: |-
   Normally this provider will be used to automate the user and groups management like user onboard/offboards or
   grouping users into teams (groups in 1password).
   Requirements
-  This provider needs op https://1password.com/downloads/command-line/ Cli, thats why it doesn't use 1password connect
+  This provider needs op https://1password.com/downloads/command-line/ v2.x Cli, thats why it doesn't use 1password connect
   API and needs a real 1password account as the authentication.
   Authentication
   Needs a real 1password account so the provider can use the "password" and "secret key" of that account.
@@ -29,7 +29,7 @@ grouping users into teams (groups in 1password).
 
 ## Requirements
 
-This provider needs [op](https://1password.com/downloads/command-line/) Cli, thats why it doesn't use 1password connect
+This provider needs [op](https://1password.com/downloads/command-line/) v2.x Cli, thats why it doesn't use 1password connect
 API and needs a real 1password account as the authentication.
 
 ## Authentication

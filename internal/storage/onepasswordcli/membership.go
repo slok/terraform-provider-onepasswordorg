@@ -9,11 +9,6 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 )
 
-type opGroupMember struct {
-	ID   string `json:"uuid"`
-	Role string `json:"role"`
-}
-
 func (r Repository) EnsureMembership(ctx context.Context, membership model.Membership) error {
 	role, err := mapModelToOpRole(membership.Role)
 	if err != nil {
@@ -21,7 +16,7 @@ func (r Repository) EnsureMembership(ctx context.Context, membership model.Membe
 	}
 
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.AddArg().UserArg().RawStrArg(membership.UserID).RawStrArg(membership.GroupID).RoleFlag(role)
+	cmdArgs.GroupArg().UserArg().GrantArg().UserFlag(membership.UserID).GroupFlag(membership.GroupID).RoleFlag(role)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -46,7 +41,7 @@ func (r Repository) EnsureMembership(ctx context.Context, membership model.Membe
 
 func (r Repository) GetMembershipByID(ctx context.Context, groupID, userID string) (*model.Membership, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.ListArg().UsersArg().GroupFlag(groupID)
+	cmdArgs.UserArg().ListArg().GroupFlag(groupID).FormatJSONFlag()
 
 	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -85,7 +80,7 @@ func (r Repository) GetMembershipByID(ctx context.Context, groupID, userID strin
 
 func (r Repository) DeleteMembership(ctx context.Context, membership model.Membership) error {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.RemoveArg().UserArg().RawStrArg(membership.UserID).RawStrArg(membership.GroupID)
+	cmdArgs.GroupArg().UserArg().RevokeArg().UserFlag(membership.UserID).GroupFlag(membership.GroupID)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {
@@ -93,6 +88,11 @@ func (r Repository) DeleteMembership(ctx context.Context, membership model.Membe
 	}
 
 	return nil
+}
+
+type opGroupMember struct {
+	ID   string `json:"id"`
+	Role string `json:"role"`
 }
 
 func mapModelToOpRole(m model.MembershipRole) (string, error) {
