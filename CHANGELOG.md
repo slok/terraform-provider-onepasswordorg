@@ -5,6 +5,7 @@
 ### Added
 
 - Vault resource.
+- Vault data source.
 
 ## Changed
 
@@ -16,8 +17,6 @@
 - `onepasswordorg_group.name` validates that is not set as empty string.
 - `onepasswordorg_user.name` validates that is not set as empty string.
 - `onepasswordorg_email.name` validates that is not set as empty string.
-
-
 
 ## [v0.2.0] - 2022-03-15
 

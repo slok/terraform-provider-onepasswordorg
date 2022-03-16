@@ -8,6 +8,7 @@ terraform {
 
 provider "onepasswordorg" {}
 
+# Resources.
 resource "onepasswordorg_user" "test" {
   name  = "1password test 3"
   email = "infrastructure+test3@fonoa.com"
@@ -29,11 +30,12 @@ resource "onepasswordorg_vault" "test" {
   description = "Terraform test vault"
 }
 
+# Data.
 data "onepasswordorg_user" "test" {
   email = onepasswordorg_user.test.email
 }
 
-output "user_test_id" {
+output "user_test" {
   value = data.onepasswordorg_user.test
 }
 
@@ -41,6 +43,14 @@ data "onepasswordorg_group" "test" {
   name = onepasswordorg_group.test.name
 }
 
-output "group_test_id" {
+output "group_test" {
   value = data.onepasswordorg_group.test
+}
+
+data "onepasswordorg_vault" "test" {
+  name = onepasswordorg_vault.test.name
+}
+
+output "vault_test" {
+  value = data.onepasswordorg_vault.test
 }

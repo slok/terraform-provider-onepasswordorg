@@ -89,11 +89,18 @@ output "user4" {
   value = data.onepasswordorg_user.user4
 }
 
-
 data "onepasswordorg_group" "group2" {
   name = onepasswordorg_group.test["group2"].name
 }
 
 output "group2" {
   value = data.onepasswordorg_group.group2
+}
+
+data "onepasswordorg_vault" "vault5" {
+  name = onepasswordorg_vault.test["vault5"].name
+}
+
+output "vault5" {
+  value = data.onepasswordorg_vault.vault5
 }

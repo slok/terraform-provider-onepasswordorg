@@ -276,5 +276,6 @@ func (p *provider) GetDataSources(_ context.Context) (map[string]tfsdk.DataSourc
 	return map[string]tfsdk.DataSourceType{
 		"onepasswordorg_user":  dataSourceUserType{},
 		"onepasswordorg_group": dataSourceGroupType{},
+		"onepasswordorg_vault": dataSourceVaultType{},
 	}, nil
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+
+	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
 type dataSourceGroupType struct{}
@@ -19,6 +21,7 @@ Provides information about a 1password group.
 			"name": {
 				Description: "The name of the group.",
 				Required:    true,
+				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Type:        types.StringType,
 			},
 			"description": {
@@ -58,14 +61,8 @@ func (d dataSourceGroup) Read(ctx context.Context, req tfsdk.ReadDataSourceReque
 		return
 	}
 
-	name := tfGroup.Name.Value
-	if name == "" {
-		resp.Diagnostics.AddError("Ivalid name", "Could not get group, because name is empty")
-		return
-	}
-
 	// Get group.
-	group, err := d.p.repo.GetGroupByName(ctx, name)
+	group, err := d.p.repo.GetGroupByName(ctx, tfGroup.Name.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting group", "Could not get group, unexpected error: "+err.Error())
 		return
