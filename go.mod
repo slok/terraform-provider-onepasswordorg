@@ -1,6 +1,6 @@
 module github.com/slok/terraform-provider-onepasswordorg
 
-go 1.17
+go 1.18
 
 require (
 	github.com/hashicorp/terraform-plugin-framework v0.6.0
