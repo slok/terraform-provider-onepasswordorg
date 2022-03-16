@@ -6,6 +6,7 @@
 
 - Vault resource.
 - Vault data source.
+- Provider option to allow selecting a specific op cli in a specific path.
 
 ## Changed
 
@@ -17,6 +18,7 @@
 - `onepasswordorg_group.name` validates that is not set as empty string.
 - `onepasswordorg_user.name` validates that is not set as empty string.
 - `onepasswordorg_email.name` validates that is not set as empty string.
+- Use go 1.18.
 
 ## [v0.2.0] - 2022-03-15
 
