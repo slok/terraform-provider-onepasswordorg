@@ -23,8 +23,8 @@ type opCli struct {
 }
 
 // NewOpCLI creates a new signed OpCLI command executor.
-func NewOpCli(address, email, secretKey, password string) (OpCli, error) {
-	binPath, err := prepareOpCliBinary()
+func NewOpCli(customCliPath, address, email, secretKey, password string) (OpCli, error) {
+	binPath, err := prepareOpCliBinary(customCliPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not prepare op cli: %w", err)
 	}
@@ -62,7 +62,7 @@ func NewOpCli(address, email, secretKey, password string) (OpCli, error) {
 // If we are running in terraform cloud, then we will get our op binary from an embedded
 // file system, copy to a path and execute from there. We know that tfe uses linux amd64
 // machines.
-func prepareOpCliBinary() (binPath string, err error) {
+func prepareOpCliBinary(customBinPath string) (binPath string, err error) {
 	const (
 		defaultBinPath   = "op"
 		tfeBinPath       = "/tmp/op-tfe"
@@ -72,7 +72,11 @@ func prepareOpCliBinary() (binPath string, err error) {
 	// If not terraform cloud, then regular execution.
 	tfe := os.Getenv(tfeRunningEnvVar)
 	if tfe == "" {
-		return defaultBinPath, nil
+		// If custom binary path is empty, use the path default `op` one.
+		if customBinPath == "" {
+			return defaultBinPath, nil
+		}
+		return customBinPath, nil
 	}
 
 	// Copy embedded binary into a tmp file.

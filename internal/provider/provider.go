@@ -20,10 +20,12 @@ const (
 	envVarOpSecretKey       = "OP_SECRET_KEY"
 	envVarOpPassword        = "OP_PASSWORD"
 	EnvVarOpFakeStoragePath = "OP_FAKE_STORAGE_PATH"
+	EnvVarOpCliPath         = "OP_CLI_PATH"
 )
 
 func New() tfsdk.Provider {
 	return &provider{}
+
 }
 
 type provider struct {
@@ -86,6 +88,11 @@ so it satisfies the op Cli requirement inside Terraform cloud workers.
 				Optional:    true,
 				Description: fmt.Sprintf("File to a path where the provider will store the data as if it is 1password (this is used only on development). Also `%s` env var can be used.", EnvVarOpFakeStoragePath),
 			},
+			"op_cli_path": {
+				Type:        types.StringType,
+				Optional:    true,
+				Description: fmt.Sprintf("The path that points to the op cli binary. Also `%s` env var can be used. (by default `op` on system path, ignored if run in Terraform cloud).", EnvVarOpCliPath),
+			},
 		},
 	}, nil
 }
@@ -97,6 +104,7 @@ type providerData struct {
 	SecretKey       types.String `tfsdk:"secret_key"`
 	Password        types.String `tfsdk:"password"`
 	FakeStoragePath types.String `tfsdk:"fake_storage_path"`
+	CliPath         types.String `tfsdk:"op_cli_path"`
 }
 
 // This is like if it was our main entrypoint.
@@ -152,8 +160,13 @@ func (p *provider) Configure(ctx context.Context, req tfsdk.ConfigureProviderReq
 			resp.Diagnostics.AddError(configErrSummary, "Invalid password:\n\n"+err.Error())
 		}
 
+		cliPath, err := p.configureCliPath(config)
+		if err != nil {
+			resp.Diagnostics.AddError(configErrSummary, "Invalid cli path:\n\n"+err.Error())
+		}
+
 		// Create OP cli.
-		cli, err := onepasswordcli.NewOpCli(address, email, secretKey, password)
+		cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password)
 		if err != nil {
 			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op cmd client:\n\n"+err.Error())
 			return
@@ -261,6 +274,18 @@ func (p *provider) configureFakeStoragePath(config providerData) (string, error)
 	}
 
 	return fakePath, nil
+}
+
+func (p *provider) configureCliPath(config providerData) (string, error) {
+	// If not set get from env, the value has priority.
+	var cliPath string
+	if config.FakeStoragePath.Null {
+		cliPath = os.Getenv(EnvVarOpCliPath)
+	} else {
+		cliPath = config.CliPath.Value
+	}
+
+	return cliPath, nil
 }
 
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
