@@ -30,6 +30,15 @@ locals {
     "group2" : { name : "group-2", description : null },
   }
 
+  vaults = {
+    "vault0" : { name : "vault-0", description : "Vault zero" },
+    "vault1" : { name : "vault-1", description : "Vault one" },
+    "vault2" : { name : "vault-2", description : null },
+    "vault3" : { name : "vault-3", description : "Vault three" },
+    "vault4" : { name : "vault-4", description : "Vault four" },
+    "vault5" : { name : "vault-5", description : "Vault five5" },
+  }
+
   members = {
     "group0-user0" : { user_id : "user0", group_id : "group0", role : "member" },
     "group0-user1" : { user_id : "user1", group_id : "group0", role : "member" },
@@ -38,6 +47,7 @@ locals {
   }
 }
 
+# Users.
 resource "onepasswordorg_user" "test" {
   for_each = local.users
 
@@ -45,6 +55,7 @@ resource "onepasswordorg_user" "test" {
   email = each.value.email
 }
 
+# Groups.
 resource "onepasswordorg_group" "test" {
   for_each = local.groups
 
@@ -60,6 +71,16 @@ resource "onepasswordorg_group_member" "test" {
   role     = each.value.role
 }
 
+# Vaults.
+resource "onepasswordorg_vault" "test" {
+  for_each = local.vaults
+
+  name        = each.value.name
+  description = each.value.description
+}
+
+
+# Data.
 data "onepasswordorg_user" "user4" {
   email = onepasswordorg_user.test["user4"].email
 }

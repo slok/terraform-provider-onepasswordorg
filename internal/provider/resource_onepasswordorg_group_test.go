@@ -87,7 +87,7 @@ resource "onepasswordorg_group" "test_group" {
 			resource.Test(t, resource.TestCase{
 				PreCheck:                 func() { testAccPreCheck(t) },
 				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertGroupDeletedOnFakeStorage(t, "test-group"), // Fake uses name as IDs.
+				CheckDestroy:             assertGroupDeletedOnFakeStorage(t, test.expGroup.ID),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,

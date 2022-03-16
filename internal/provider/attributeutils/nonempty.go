@@ -27,7 +27,6 @@ func (n nonEmptyString) Validate(ctx context.Context, req tfsdk.ValidateAttribut
 	if s.Value == "" {
 		resp.Diagnostics.AddError(req.AttributePath.String(), "Attribute can't be empty")
 	}
-
 }
 
 // NonEmptyString is a validator that will validate that a string is not empty.

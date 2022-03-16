@@ -15,34 +15,34 @@ import (
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage/onepasswordcli/onepasswordclimock"
 )
 
-func TestRepositoryCreateGroup(t *testing.T) {
+func TestRepositoryCreateVault(t *testing.T) {
 	tests := map[string]struct {
-		group    model.Group
+		vault    model.Vault
 		mock     func(m *onepasswordclimock.OpCli)
-		expGroup *model.Group
+		expVault *model.Vault
 		expErr   bool
 	}{
-		"Creating a group correctly, should return the data with the ID.": {
-			group: model.Group{Name: "test-00", Description: "Test00"},
+		"Creating a vault correctly, should return the data with the ID.": {
+			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
-				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("group doesn't exist"))
+				expCmd := `get vault test-00`
+				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("vault doesn't exist"))
 
-				expCmd = `create group test-00  --description Test00`
+				expCmd = `create vault test-00 --description Test00`
 				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
-			expGroup: &model.Group{
+			expVault: &model.Vault{
 				ID:          "1234567890",
 				Name:        "test-00",
 				Description: "Test00",
 			},
 		},
 
-		"Creating a group that already exists, should  fail.": {
-			group: model.Group{Name: "test-00", Description: "Test00"},
+		"Creating a vault that already exists, should  fail.": {
+			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
+				expCmd := `get vault test-00`
 				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T07:48:26.179385832+01:00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
@@ -50,12 +50,12 @@ func TestRepositoryCreateGroup(t *testing.T) {
 		},
 
 		"Having an error while calling the create op CLI action, should fail.": {
-			group: model.Group{Name: "test-00", Description: "Test00"},
+			vault: model.Vault{Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-00`
-				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("group doesn't exist"))
+				expCmd := `get vault test-00`
+				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("vault doesn't exist"))
 
-				expCmd = `create group test-00  --description Test00`
+				expCmd = `create vault test-00 --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -73,12 +73,12 @@ func TestRepositoryCreateGroup(t *testing.T) {
 			repo, err := onepasswordcli.NewRepository(mc)
 			require.NoError(err)
 
-			gotGroup, err := repo.CreateGroup(context.TODO(), test.group)
+			gotVault, err := repo.CreateVault(context.TODO(), test.vault)
 
 			if test.expErr {
 				assert.Error(err)
 			} else if assert.NoError(err) {
-				assert.Equal(test.expGroup, gotGroup)
+				assert.Equal(test.expVault, gotVault)
 			}
 
 			mc.AssertExpectations(t)
@@ -86,21 +86,21 @@ func TestRepositoryCreateGroup(t *testing.T) {
 	}
 }
 
-func TestRepositoryGetGroupByID(t *testing.T) {
+func TestRepositoryGetVaultByID(t *testing.T) {
 	tests := map[string]struct {
 		id       string
 		mock     func(m *onepasswordclimock.OpCli)
-		expGroup *model.Group
+		expVault *model.Vault
 		expErr   bool
 	}{
-		"Getting a group correctly, should return the group data.": {
+		"Getting a vault correctly, should return the vault data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-id`
-				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00","createdAt":"2022-03-14T06:48:26Z","updatedAt":"2022-03-14T06:48:26Z","activeKeysetUuid":"231321321","attrVersion":1,"state":"A","permissions":16,"pubKey":{"alg":"RSA-OAEP","kid":"3213213213","ext":true,"e":"AQAB","n":"432443","key_ops":["encrypt"],"kty":"RSA"}}`
+				expCmd := `get vault test-id`
+				stdout := `{"uuid":"1234567890","type":"U","name":"test-00","desc":"Test00"}`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return(stdout, "", nil)
 			},
-			expGroup: &model.Group{
+			expVault: &model.Vault{
 				ID:          "1234567890",
 				Name:        "test-00",
 				Description: "Test00",
@@ -110,7 +110,7 @@ func TestRepositoryGetGroupByID(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `get group test-id`
+				expCmd := `get vault test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -128,12 +128,12 @@ func TestRepositoryGetGroupByID(t *testing.T) {
 			repo, err := onepasswordcli.NewRepository(mc)
 			require.NoError(err)
 
-			gotGroup, err := repo.GetGroupByID(context.TODO(), test.id)
+			gotVault, err := repo.GetVaultByID(context.TODO(), test.id)
 
 			if test.expErr {
 				assert.Error(err)
 			} else if assert.NoError(err) {
-				assert.Equal(test.expGroup, gotGroup)
+				assert.Equal(test.expVault, gotVault)
 			}
 
 			mc.AssertExpectations(t)
@@ -141,26 +141,26 @@ func TestRepositoryGetGroupByID(t *testing.T) {
 	}
 }
 
-func TestRepositoryEnsureGroup(t *testing.T) {
+func TestRepositoryEnsureVault(t *testing.T) {
 	tests := map[string]struct {
-		group    model.Group
+		vault    model.Vault
 		mock     func(m *onepasswordclimock.OpCli)
-		expGroup *model.Group
+		expVault *model.Vault
 		expErr   bool
 	}{
-		"Updating a group correctly, should update the group data.": {
-			group: model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
+		"Updating a vault correctly, should update the user data.": {
+			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit group test-id --description Test00`
+				expCmd := `edit vault test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
-			expGroup: &model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
+			expVault: &model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 		},
 
 		"Having an error while calling the op CLI, should fail.": {
-			group: model.Group{ID: "test-id", Name: "test-00", Description: "Test00"},
+			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `edit group test-id --description Test00`
+				expCmd := `edit vault test-id --description Test00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -178,12 +178,12 @@ func TestRepositoryEnsureGroup(t *testing.T) {
 			repo, err := onepasswordcli.NewRepository(mc)
 			require.NoError(err)
 
-			gotGroup, err := repo.EnsureGroup(context.TODO(), test.group)
+			gotVault, err := repo.EnsureVault(context.TODO(), test.vault)
 
 			if test.expErr {
 				assert.Error(err)
 			} else if assert.NoError(err) {
-				assert.Equal(test.expGroup, gotGroup)
+				assert.Equal(test.expVault, gotVault)
 			}
 
 			mc.AssertExpectations(t)
@@ -191,16 +191,16 @@ func TestRepositoryEnsureGroup(t *testing.T) {
 	}
 }
 
-func TestRepositoryDeleteGroup(t *testing.T) {
+func TestRepositoryDeleteVault(t *testing.T) {
 	tests := map[string]struct {
 		id     string
 		mock   func(m *onepasswordclimock.OpCli)
 		expErr bool
 	}{
-		"Delete a group correctly, should return the group data.": {
+		"Delete a vault correctly, should return the vault data.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete group test-id`
+				expCmd := `delete vault test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 		},
@@ -208,7 +208,7 @@ func TestRepositoryDeleteGroup(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			id: "test-id",
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `delete group test-id`
+				expCmd := `delete vault test-id`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,
@@ -226,7 +226,7 @@ func TestRepositoryDeleteGroup(t *testing.T) {
 			repo, err := onepasswordcli.NewRepository(mc)
 			require.NoError(err)
 
-			err = repo.DeleteGroup(context.TODO(), test.id)
+			err = repo.DeleteVault(context.TODO(), test.id)
 
 			if test.expErr {
 				assert.Error(err)

@@ -122,3 +122,36 @@ func assertGroupMemberDeletedOnFakeStorage(t *testing.T, groupID, userID string)
 		return nil
 	})
 }
+
+// assertVaultOnFakeStorage is a helper to assert the expected vault is stored on the fake
+// repository.
+func assertVaultOnFakeStorage(t *testing.T, expVault *model.Vault) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		// Get fake repo.
+		repo := getFakeRepository(t)
+
+		// Check vault.
+		gotVault, err := repo.GetVaultByID(context.TODO(), expVault.ID)
+		assert.NoError(err)
+		assert.Equal(expVault, gotVault)
+		return nil
+	})
+}
+
+// assertVaultDeletedOnFakeStorage is a helper to assert the expected vault ID is not stored on
+// the fake repository.
+func assertVaultDeletedOnFakeStorage(t *testing.T, vaultID string) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		// Get fake repo.
+		repo := getFakeRepository(t)
+
+		// Check vault is missing.
+		_, err := repo.GetVaultByID(context.TODO(), vaultID)
+		assert.Error(err)
+		return nil
+	})
+}
