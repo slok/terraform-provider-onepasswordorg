@@ -16,6 +16,14 @@ To manage secrets use the [official 1password](https://registry.terraform.io/pro
 - Create and delete users.
 - Delete and create groups.
 - Assign users to groups.
+- Create Vaults.
+- Grant fine grain vault permissions to groups.
+
+## Requirements
+
+- [Terraform](https://www.terraform.io/downloads.html) 1.1 or higher
+- [Go](https://golang.org/doc/install) 1.18 (to build the provider plugin)
+- [1password](https://app-updates.agilebits.com/product_history/CLI2) V2 CLI.
 
 ## How does it work
 
