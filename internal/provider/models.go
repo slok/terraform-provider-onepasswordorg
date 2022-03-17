@@ -28,3 +28,28 @@ type Member struct {
 	GroupID types.String `tfsdk:"group_id"`
 	Role    types.String `tfsdk:"role"`
 }
+
+type VaultGroupAccess struct {
+	ID          types.String       `tfsdk:"id"`
+	VaultID     types.String       `tfsdk:"vault_id"`
+	GroupID     types.String       `tfsdk:"group_id"`
+	Permissions *AccessPermissions `tfsdk:"permissions"`
+}
+
+type AccessPermissions struct {
+	AllowViewing         types.Bool `tfsdk:"allow_viewing"`
+	AllowEditing         types.Bool `tfsdk:"allow_editing"`
+	AllowManaging        types.Bool `tfsdk:"allow_managing"`
+	ViewItems            types.Bool `tfsdk:"view_items"`
+	CreateItems          types.Bool `tfsdk:"create_items"`
+	EditItems            types.Bool `tfsdk:"edit_items"`
+	ArchiveItems         types.Bool `tfsdk:"archive_items"`
+	DeleteItems          types.Bool `tfsdk:"delete_items"`
+	ViewAndCopyPasswords types.Bool `tfsdk:"view_and_copy_passwords"`
+	ViewItemHistory      types.Bool `tfsdk:"view_item_history"`
+	ImportItems          types.Bool `tfsdk:"import_items"`
+	ExportItems          types.Bool `tfsdk:"export_items"`
+	CopyAndShareItems    types.Bool `tfsdk:"copy_and_share_items"`
+	PrintItems           types.Bool `tfsdk:"print_items"`
+	ManageVault          types.Bool `tfsdk:"manage_vault"`
+}

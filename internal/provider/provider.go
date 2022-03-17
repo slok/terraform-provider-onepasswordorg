@@ -290,10 +290,11 @@ func (p *provider) configureCliPath(config providerData) (string, error) {
 
 func (p *provider) GetResources(_ context.Context) (map[string]tfsdk.ResourceType, diag.Diagnostics) {
 	return map[string]tfsdk.ResourceType{
-		"onepasswordorg_user":         resourceUserType{},
-		"onepasswordorg_group":        resourceGroupType{},
-		"onepasswordorg_group_member": resourceGroupMemberType{},
-		"onepasswordorg_vault":        resourceVaultType{},
+		"onepasswordorg_user":               resourceUserType{},
+		"onepasswordorg_group":              resourceGroupType{},
+		"onepasswordorg_group_member":       resourceGroupMemberType{},
+		"onepasswordorg_vault":              resourceVaultType{},
+		"onepasswordorg_vault_group_access": resourceVaultGroupAccessType{},
 	}, nil
 }
 

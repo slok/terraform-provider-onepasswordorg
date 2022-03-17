@@ -1,5 +1,7 @@
 package onepasswordcli
 
+import "strings"
+
 type onePasswordCliCmd struct {
 	args []string
 }
@@ -107,5 +109,26 @@ func (o *onePasswordCliCmd) FormatJSONFlag() *onePasswordCliCmd {
 
 func (o *onePasswordCliCmd) EmailFlag(email string) *onePasswordCliCmd {
 	o.args = append(o.args, "--email", email)
+	return o
+}
+
+func (o *onePasswordCliCmd) VaultFlag(id string) *onePasswordCliCmd {
+	o.args = append(o.args, "--vault", id)
+	return o
+}
+
+func (o *onePasswordCliCmd) NoInputFlag() *onePasswordCliCmd {
+	o.args = append(o.args, "--no-input")
+	return o
+}
+
+func (o *onePasswordCliCmd) PermissionsFlag(permissions []string) *onePasswordCliCmd {
+	if len(permissions) == 0 {
+		return o
+	}
+
+	p := strings.Join(permissions, ",")
+	o.args = append(o.args, "--permissions", p)
+
 	return o
 }

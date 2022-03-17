@@ -88,19 +88,19 @@ func (r resourceGroupMember) Create(ctx context.Context, req tfsdk.CreateResourc
 
 	err = r.p.repo.EnsureMembership(ctx, *m)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating user", "Could not create user, unexpected error: "+err.Error())
+		resp.Diagnostics.AddError("Error creating membership", "Could not create membership, unexpected error: "+err.Error())
 		return
 	}
 
 	// Map to tf model.
-	newTfUser, err := mapModelToTfMembership(*m)
+	newTfMember, err := mapModelToTfMembership(*m)
 	if err != nil {
 		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
 		return
 	}
 
 	// Set on state.
-	diags = resp.State.Set(ctx, newTfUser)
+	diags = resp.State.Set(ctx, newTfMember)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -187,14 +187,14 @@ func (r resourceGroupMember) Update(ctx context.Context, req tfsdk.UpdateResourc
 	}
 
 	// Map to tf model.
-	newTfUser, err := mapModelToTfMembership(*m)
+	newTfMember, err := mapModelToTfMembership(*m)
 	if err != nil {
 		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
 		return
 	}
 
 	// Set on state.
-	diags = resp.State.Set(ctx, newTfUser)
+	diags = resp.State.Set(ctx, newTfMember)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
 		return

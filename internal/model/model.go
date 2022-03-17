@@ -35,3 +35,28 @@ type Membership struct {
 	GroupID string
 	Role    MembershipRole
 }
+
+type VaultGroupAccess struct {
+	VaultID     string
+	GroupID     string
+	Permissions AccessPermissions
+}
+
+// More information in https://developer.1password.com/docs/cli/vault-permissions.
+type AccessPermissions struct {
+	AllowViewing         bool
+	AllowEditing         bool
+	AllowManaging        bool
+	ViewItems            bool
+	CreateItems          bool
+	EditItems            bool
+	ArchiveItems         bool
+	DeleteItems          bool
+	ViewAndCopyPasswords bool
+	ViewItemHistory      bool
+	ImportItems          bool
+	ExportItems          bool
+	CopyAndShareItems    bool
+	PrintItems           bool
+	ManageVault          bool
+}
