@@ -45,6 +45,13 @@ locals {
     "group1-user0" : { user_id : "user0", group_id : "group1", role : null },
     "group1-user2" : { user_id : "user2", group_id : "group1", role : "manager" },
   }
+
+  group_access = {
+    "vault0-group0" : { vault_id : "vault0", group_id : "group0" },
+    "vault4-group0" : { vault_id : "vault4", group_id : "group0" },
+    "vault3-group1" : { vault_id : "vault3", group_id : "group1" },
+    "vault4-group2" : { vault_id : "vault4", group_id : "group2" },
+  }
 }
 
 # Users.
@@ -77,6 +84,31 @@ resource "onepasswordorg_vault" "test" {
 
   name        = each.value.name
   description = each.value.description
+}
+
+
+resource "onepasswordorg_vault_group_access" "test" {
+  for_each = local.group_access
+
+  vault_id = each.value.vault_id
+  group_id = each.value.group_id
+  permissions = {
+    allow_viewing           = true
+    allow_editing           = true
+    allow_managing          = false
+    view_items              = true
+    create_items            = true
+    edit_items              = false
+    archive_items           = false
+    delete_items            = false
+    view_and_copy_passwords = true
+    view_item_history       = true
+    import_items            = true
+    export_items            = true
+    copy_and_share_items    = true
+    print_items             = true
+    manage_vault            = false
+  }
 }
 
 

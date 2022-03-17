@@ -30,6 +30,24 @@ resource "onepasswordorg_vault" "test" {
   description = "Terraform test vault"
 }
 
+resource "onepasswordorg_vault_group_access" "test" {
+  vault_id = onepasswordorg_vault.test.id
+  group_id = onepasswordorg_group.test.id
+  permissions = {
+    view_items              = true
+    create_items            = true
+    edit_items              = true
+    archive_items           = true
+    delete_items            = true
+    view_and_copy_passwords = true
+    view_item_history       = true
+    import_items            = true
+    export_items            = true
+    copy_and_share_items    = true
+    print_items             = true
+  }
+}
+
 # Data.
 data "onepasswordorg_user" "test" {
   email = onepasswordorg_user.test.email

@@ -28,4 +28,8 @@ type Repository interface {
 	EnsureMembership(ctx context.Context, membership model.Membership) error
 	DeleteMembership(ctx context.Context, membership model.Membership) error
 	GetMembershipByID(ctx context.Context, groupID, userID string) (*model.Membership, error)
+
+	EnsureVaultGroupAccess(ctx context.Context, groupAccess model.VaultGroupAccess) error
+	DeleteVaultGroupAccess(ctx context.Context, vaultID string, groupID string) error
+	GetVaultGroupAccessByID(ctx context.Context, vaultID string, groupID string) (*model.VaultGroupAccess, error)
 }

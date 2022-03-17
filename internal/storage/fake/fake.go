@@ -12,12 +12,13 @@ import (
 )
 
 type repository struct {
-	fakeFilePath   string
-	usersByID      map[string]model.User
-	groupsByID     map[string]model.Group
-	membershipByID map[string]model.Membership
-	vaultsByID     map[string]model.Vault
-	storageMu      sync.RWMutex
+	fakeFilePath         string
+	usersByID            map[string]model.User
+	groupsByID           map[string]model.Group
+	membershipByID       map[string]model.Membership
+	vaultsByID           map[string]model.Vault
+	vaultGroupAccessByID map[string]model.VaultGroupAccess
+	storageMu            sync.RWMutex
 }
 
 func NewRepository(fakeFilePath string) (storage.Repository, error) {
@@ -46,12 +47,18 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 		vaults = fks.Vaults
 	}
 
+	vaultGroupAccess := map[string]model.VaultGroupAccess{}
+	if fks != nil && fks.VaultGroupAccess != nil {
+		vaultGroupAccess = fks.VaultGroupAccess
+	}
+
 	return &repository{
-		fakeFilePath:   fakeFilePath,
-		usersByID:      users,
-		groupsByID:     groups,
-		membershipByID: members,
-		vaultsByID:     vaults,
+		fakeFilePath:         fakeFilePath,
+		usersByID:            users,
+		groupsByID:           groups,
+		membershipByID:       members,
+		vaultsByID:           vaults,
+		vaultGroupAccessByID: vaultGroupAccess,
 	}, nil
 }
 
@@ -363,19 +370,74 @@ func (r *repository) DeleteVault(ctx context.Context, id string) error {
 	return nil
 }
 
+func (r *repository) getVaultGroupAccessID(vaultID, groupID string) string {
+	return vaultID + "/" + groupID
+}
+
+func (r *repository) EnsureVaultGroupAccess(ctx context.Context, groupAccess model.VaultGroupAccess) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getVaultGroupAccessID(groupAccess.VaultID, groupAccess.GroupID)
+	r.vaultGroupAccessByID[id] = groupAccess
+
+	err := r.dumpStorage()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteVaultGroupAccess(ctx context.Context, vaultID string, groupID string) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getVaultGroupAccessID(vaultID, groupID)
+
+	_, ok := r.vaultGroupAccessByID[id]
+	if !ok {
+		return fmt.Errorf("vault access doesn't exists")
+	}
+
+	delete(r.vaultGroupAccessByID, id)
+
+	err := r.dumpStorage()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) GetVaultGroupAccessByID(ctx context.Context, vaultID string, groupID string) (*model.VaultGroupAccess, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	id := r.getVaultGroupAccessID(vaultID, groupID)
+	v, ok := r.vaultGroupAccessByID[id]
+	if !ok {
+		return nil, fmt.Errorf("vault access doesn't exists")
+	}
+
+	return &v, nil
+}
+
 type fakeStorage struct {
-	Users   map[string]model.User
-	Groups  map[string]model.Group
-	Members map[string]model.Membership
-	Vaults  map[string]model.Vault
+	Users            map[string]model.User
+	Groups           map[string]model.Group
+	Members          map[string]model.Membership
+	Vaults           map[string]model.Vault
+	VaultGroupAccess map[string]model.VaultGroupAccess
 }
 
 func (r *repository) dumpStorage() error {
 	fks := fakeStorage{
-		Users:   r.usersByID,
-		Groups:  r.groupsByID,
-		Members: r.membershipByID,
-		Vaults:  r.vaultsByID,
+		Users:            r.usersByID,
+		Groups:           r.groupsByID,
+		Members:          r.membershipByID,
+		Vaults:           r.vaultsByID,
+		VaultGroupAccess: r.vaultGroupAccessByID,
 	}
 
 	data, err := json.MarshalIndent(fks, "", "\t")

@@ -7,6 +7,7 @@
 - Vault resource.
 - Vault data source.
 - Provider option to allow selecting a specific op cli in a specific path.
+- Vault group access with fine grain permissions.
 
 ## Changed
 
