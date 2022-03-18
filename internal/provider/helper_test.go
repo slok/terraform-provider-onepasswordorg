@@ -136,13 +136,38 @@ func assertVaultGroupAccessOnFakeStorage(t *testing.T, exp *model.VaultGroupAcce
 	})
 }
 
-func assertVaultGroupAccessDeletedOnFakeStorage(t *testing.T, vaultID, GroupID string) resource.TestCheckFunc {
+func assertVaultGroupAccessDeletedOnFakeStorage(t *testing.T, vaultID, groupID string) resource.TestCheckFunc {
 	assert := assert.New(t)
 
 	return resource.TestCheckFunc(func(s *terraform.State) error {
 		repo := getFakeRepository(t)
 
-		_, err := repo.GetVaultGroupAccessByID(context.TODO(), vaultID, GroupID)
+		_, err := repo.GetVaultGroupAccessByID(context.TODO(), vaultID, groupID)
+		assert.Error(err)
+		return nil
+	})
+}
+
+func assertVaultUserAccessOnFakeStorage(t *testing.T, exp *model.VaultUserAccess) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		repo := getFakeRepository(t)
+
+		got, err := repo.GetVaultUserAccessByID(context.TODO(), exp.VaultID, exp.UserID)
+		assert.NoError(err)
+		assert.Equal(exp, got)
+		return nil
+	})
+}
+
+func assertVaultUserAccessDeletedOnFakeStorage(t *testing.T, vaultID, userID string) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		repo := getFakeRepository(t)
+
+		_, err := repo.GetVaultUserAccessByID(context.TODO(), vaultID, userID)
 		assert.Error(err)
 		return nil
 	})

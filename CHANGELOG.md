@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- Vault user access with fine grain permissions.
+
+
 ## [v0.3.0] - 2022-03-17
 
 ### Added

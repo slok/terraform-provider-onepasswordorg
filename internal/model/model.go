@@ -42,6 +42,12 @@ type VaultGroupAccess struct {
 	Permissions AccessPermissions
 }
 
+type VaultUserAccess struct {
+	VaultID     string
+	UserID      string
+	Permissions AccessPermissions
+}
+
 // More information in https://developer.1password.com/docs/cli/vault-permissions.
 type AccessPermissions struct {
 	AllowViewing         bool
