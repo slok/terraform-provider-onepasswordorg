@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/slok/terraform-provider-onepasswordorg)](https://goreportcard.com/report/github.com/slok/terraform-provider-onepasswordorg)
 [![Apache 2 licensed](https://img.shields.io/badge/license-Apache2-blue.svg)](https://raw.githubusercontent.com/slok/terraform-provider-onepasswordorg/master/LICENSE)
 [![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/slok/terraform-provider-onepasswordorg)](https://github.com/slok/terraform-provider-onepasswordorg/releases/latest)
-[![Terraform regsitry](https://img.shields.io/badge/Terraform-Registry-color=green?logo=Terraform&style=flat&color=7B42BC&logoColor=white)](https://registry.terraform.io/providers/slok/onepasswordorg/latest/docs)
+[![Terraform regsitry](https://img.shields.io/badge/Terraform-Registry-color=green?logo=Terraform&style=flat&color=5C4EE5&logoColor=white)](https://registry.terraform.io/providers/slok/onepasswordorg/latest/docs)
 
 Terraform provider for [1password](https://1password.com) organization (e.g: Users and groups).
 

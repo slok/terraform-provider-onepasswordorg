@@ -52,6 +52,13 @@ locals {
     "vault3-group1" : { vault_id : "vault3", group_id : "group1" },
     "vault4-group2" : { vault_id : "vault4", group_id : "group2" },
   }
+
+  user_access = {
+    "vault0-user3" : { vault_id : "vault0", user_id : "user3" },
+    "vault4-user4" : { vault_id : "vault4", user_id : "user4" },
+    "vault3-user5" : { vault_id : "vault3", user_id : "user5" },
+    "vault4-user6" : { vault_id : "vault4", user_id : "user6" },
+  }
 }
 
 # Users.
@@ -105,6 +112,30 @@ resource "onepasswordorg_vault_group_access" "test" {
     view_item_history       = true
     import_items            = true
     export_items            = true
+    copy_and_share_items    = true
+    print_items             = true
+    manage_vault            = false
+  }
+}
+
+resource "onepasswordorg_vault_user_access" "test" {
+  for_each = local.user_access
+
+  vault_id = each.value.vault_id
+  user_id  = each.value.user_id
+  permissions = {
+    allow_viewing           = false
+    allow_editing           = true
+    allow_managing          = false
+    view_items              = true
+    create_items            = true
+    edit_items              = false
+    archive_items           = true
+    delete_items            = false
+    view_and_copy_passwords = true
+    view_item_history       = true
+    import_items            = true
+    export_items            = false
     copy_and_share_items    = true
     print_items             = true
     manage_vault            = false

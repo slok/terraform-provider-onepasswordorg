@@ -36,6 +36,13 @@ type VaultGroupAccess struct {
 	Permissions *AccessPermissions `tfsdk:"permissions"`
 }
 
+type VaultUserAccess struct {
+	ID          types.String       `tfsdk:"id"`
+	VaultID     types.String       `tfsdk:"vault_id"`
+	UserID      types.String       `tfsdk:"user_id"`
+	Permissions *AccessPermissions `tfsdk:"permissions"`
+}
+
 type AccessPermissions struct {
 	AllowViewing         types.Bool `tfsdk:"allow_viewing"`
 	AllowEditing         types.Bool `tfsdk:"allow_editing"`

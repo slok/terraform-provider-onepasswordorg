@@ -34,17 +34,37 @@ resource "onepasswordorg_vault_group_access" "test" {
   vault_id = onepasswordorg_vault.test.id
   group_id = onepasswordorg_group.test.id
   permissions = {
-    view_items              = true
-    create_items            = true
-    edit_items              = true
     archive_items           = true
+    copy_and_share_items    = true
+    create_items            = true
     delete_items            = true
+    edit_items              = true
+    export_items            = true
+    import_items            = true
+    manage_vault            = false
+    print_items             = true
     view_and_copy_passwords = true
     view_item_history       = true
-    import_items            = true
-    export_items            = true
-    copy_and_share_items    = true
-    print_items             = true
+    view_items              = true
+  }
+}
+
+resource "onepasswordorg_vault_user_access" "test" {
+  vault_id = onepasswordorg_vault.test.id
+  user_id  = onepasswordorg_user.test.id
+  permissions = {
+    archive_items           = false
+    copy_and_share_items    = false
+    create_items            = false
+    delete_items            = false
+    edit_items              = false
+    export_items            = false
+    import_items            = false
+    manage_vault            = false
+    print_items             = false
+    view_and_copy_passwords = true
+    view_item_history       = true
+    view_items              = true
   }
 }
 

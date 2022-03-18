@@ -32,4 +32,8 @@ type Repository interface {
 	EnsureVaultGroupAccess(ctx context.Context, groupAccess model.VaultGroupAccess) error
 	DeleteVaultGroupAccess(ctx context.Context, vaultID string, groupID string) error
 	GetVaultGroupAccessByID(ctx context.Context, vaultID string, groupID string) (*model.VaultGroupAccess, error)
+
+	EnsureVaultUserAccess(ctx context.Context, userAccess model.VaultUserAccess) error
+	DeleteVaultUserAccess(ctx context.Context, vaultID string, userID string) error
+	GetVaultUserAccessByID(ctx context.Context, vaultID string, userID string) (*model.VaultUserAccess, error)
 }

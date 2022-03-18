@@ -18,6 +18,7 @@ type repository struct {
 	membershipByID       map[string]model.Membership
 	vaultsByID           map[string]model.Vault
 	vaultGroupAccessByID map[string]model.VaultGroupAccess
+	vaultUserAccessByID  map[string]model.VaultUserAccess
 	storageMu            sync.RWMutex
 }
 
@@ -52,6 +53,11 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 		vaultGroupAccess = fks.VaultGroupAccess
 	}
 
+	vaultUserAccess := map[string]model.VaultUserAccess{}
+	if fks != nil && fks.VaultUserAccess != nil {
+		vaultUserAccess = fks.VaultUserAccess
+	}
+
 	return &repository{
 		fakeFilePath:         fakeFilePath,
 		usersByID:            users,
@@ -59,6 +65,7 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 		membershipByID:       members,
 		vaultsByID:           vaults,
 		vaultGroupAccessByID: vaultGroupAccess,
+		vaultUserAccessByID:  vaultUserAccess,
 	}, nil
 }
 
@@ -423,12 +430,66 @@ func (r *repository) GetVaultGroupAccessByID(ctx context.Context, vaultID string
 	return &v, nil
 }
 
+func (r *repository) getVaultUserAccessID(vaultID, userID string) string {
+	return vaultID + "/" + userID
+}
+
+func (r *repository) EnsureVaultUserAccess(ctx context.Context, userAccess model.VaultUserAccess) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getVaultUserAccessID(userAccess.VaultID, userAccess.UserID)
+	r.vaultUserAccessByID[id] = userAccess
+
+	err := r.dumpStorage()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) DeleteVaultUserAccess(ctx context.Context, vaultID string, userID string) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := r.getVaultUserAccessID(vaultID, userID)
+
+	_, ok := r.vaultUserAccessByID[id]
+	if !ok {
+		return fmt.Errorf("vault access doesn't exists")
+	}
+
+	delete(r.vaultUserAccessByID, id)
+
+	err := r.dumpStorage()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *repository) GetVaultUserAccessByID(ctx context.Context, vaultID string, userID string) (*model.VaultUserAccess, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	id := r.getVaultUserAccessID(vaultID, userID)
+	v, ok := r.vaultUserAccessByID[id]
+	if !ok {
+		return nil, fmt.Errorf("vault access doesn't exists")
+	}
+
+	return &v, nil
+}
+
 type fakeStorage struct {
 	Users            map[string]model.User
 	Groups           map[string]model.Group
 	Members          map[string]model.Membership
 	Vaults           map[string]model.Vault
 	VaultGroupAccess map[string]model.VaultGroupAccess
+	VaultUserAccess  map[string]model.VaultUserAccess
 }
 
 func (r *repository) dumpStorage() error {
@@ -438,6 +499,7 @@ func (r *repository) dumpStorage() error {
 		Members:          r.membershipByID,
 		Vaults:           r.vaultsByID,
 		VaultGroupAccess: r.vaultGroupAccessByID,
+		VaultUserAccess:  r.vaultUserAccessByID,
 	}
 
 	data, err := json.MarshalIndent(fks, "", "\t")

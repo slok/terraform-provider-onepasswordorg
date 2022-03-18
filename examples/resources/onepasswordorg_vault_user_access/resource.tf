@@ -3,14 +3,14 @@ resource "onepasswordorg_vault" "vault0" {
   description = "Vault 0"
 }
 
-resource "onepasswordorg_group" "group0" {
-  name        = "group-0"
-  description = "Group 0"
+resource "onepasswordorg_user" "user0" {
+  name  = "user-0"
+  email = "user0@slok.dev"
 }
 
-resource "onepasswordorg_vault_group_access" "business_full" {
+resource "onepasswordorg_vault_user_access" "business_full" {
   vault_id = onepasswordorg_vault.vault0.id
-  group_id = onepasswordorg_group.group0.id
+  user_id  = onepasswordorg_user.user0.id
   permissions = {
     view_items              = true
     create_items            = true
@@ -27,27 +27,27 @@ resource "onepasswordorg_vault_group_access" "business_full" {
   }
 }
 
-resource "onepasswordorg_group" "group1" {
-  name        = "group-1"
-  description = "Group 1"
+resource "onepasswordorg_user" "user1" {
+  name  = "user-1"
+  email = "user1@slok.dev"
 }
 
-resource "onepasswordorg_vault_group_access" "team_view" {
+resource "onepasswordorg_vault_user_access" "team_view" {
   vault_id = onepasswordorg_vault.vault0.id
-  group_id = onepasswordorg_group.group1.id
+  user_id  = onepasswordorg_user.user1.id
   permissions = {
     allow_viewing = true
   }
 }
 
-resource "onepasswordorg_group" "group2" {
-  name        = "group-2"
-  description = "Group 2"
+resource "onepasswordorg_user" "user2" {
+  name  = "user-2"
+  email = "user2@slok.dev"
 }
 
-resource "onepasswordorg_vault_group_access" "business_regular" {
+resource "onepasswordorg_vault_user_access" "business_regular" {
   vault_id = onepasswordorg_vault.vault0.id
-  group_id = onepasswordorg_group.group2.id
+  user_id  = onepasswordorg_user.user2.id
   permissions = {
     view_items              = true
     create_items            = true
@@ -64,16 +64,15 @@ resource "onepasswordorg_vault_group_access" "business_regular" {
 }
 
 
-resource "onepasswordorg_group" "group3" {
-  name        = "group-3"
-  description = "Group 3"
+resource "onepasswordorg_user" "user3" {
+  name  = "user-3"
+  email = "user3@slok.dev"
 }
 
-resource "onepasswordorg_vault_group_access" "business_manage" {
+resource "onepasswordorg_vault_user_access" "business_manage" {
   vault_id = onepasswordorg_vault.vault0.id
-  group_id = onepasswordorg_group.group3.id
+  user_id  = onepasswordorg_user.user3.id
   permissions = {
     manage_vault = true
   }
 }
-
