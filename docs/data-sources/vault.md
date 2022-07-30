@@ -27,11 +27,11 @@ output "vault_test" {
 
 ### Required
 
-- **name** (String) The name of the vault.
+- `name` (String) The name of the vault.
 
 ### Read-Only
 
-- **description** (String)
-- **id** (String) The ID of this resource.
+- `description` (String)
+- `id` (String) The ID of this resource.
 
 

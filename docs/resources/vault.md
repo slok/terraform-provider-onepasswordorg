@@ -24,15 +24,15 @@ resource "onepasswordorg_vault" "test" {
 
 ### Required
 
-- **name** (String) The name of the vault.
+- `name` (String) The name of the vault.
 
 ### Optional
 
-- **description** (String) The description of the vault.
+- `description` (String) The description of the vault.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 ## Import
 

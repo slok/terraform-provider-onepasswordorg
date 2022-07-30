@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
@@ -46,7 +46,7 @@ A 1password group membership will make a user part of a group with a role on tha
 				Type:          types.StringType,
 				Optional:      true,
 				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultString("member")},
+				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "member"})},
 				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
 				Description:   "The role of the user on the group (can be `member` or `manager`, by default member).",
 			},
@@ -236,7 +236,7 @@ func (r resourceGroupMember) Delete(ctx context.Context, req tfsdk.DeleteResourc
 
 func (r resourceGroupMember) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
 	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
+	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 const (

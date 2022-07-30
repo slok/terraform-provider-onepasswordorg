@@ -27,12 +27,12 @@ resource "onepasswordorg_user" "user0" {
 
 ### Required
 
-- **email** (String) The email of the user.
-- **name** (String) The name of the user.
+- `email` (String) The email of the user.
+- `name` (String) The name of the user.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 ## Import
 

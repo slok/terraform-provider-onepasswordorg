@@ -3,7 +3,7 @@ name: ci
 on: [push, pull_request]
 
 env:
-  TF_PLUGIN_DOCS_VERSION: 0.5.1
+  TF_PLUGIN_DOCS_VERSION: 0.13.0
 
 jobs:
   check-docs:
@@ -58,6 +58,8 @@ jobs:
         terraform:
           - '1.0.*'
           - '1.1.*'
+          - '1.2.*'
+          - 'latest'
     steps:
       - uses: actions/setup-go@v2
         with:

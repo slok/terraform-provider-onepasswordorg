@@ -27,11 +27,11 @@ output "group_test" {
 
 ### Required
 
-- **name** (String) The name of the group.
+- `name` (String) The name of the group.
 
 ### Read-Only
 
-- **description** (String)
-- **id** (String) The ID of this resource.
+- `description` (String)
+- `id` (String) The ID of this resource.
 
 

@@ -38,16 +38,16 @@ resource "onepasswordorg_group_member" "test_group_user0" {
 
 ### Required
 
-- **group_id** (String) The group ID.
-- **user_id** (String) The user ID.
+- `group_id` (String) The group ID.
+- `user_id` (String) The user ID.
 
 ### Optional
 
-- **role** (String) The role of the user on the group (can be `member` or `manager`, by default member).
+- `role` (String) The role of the user on the group (can be `member` or `manager`, by default member).
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 ## Import
 
