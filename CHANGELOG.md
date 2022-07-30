@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.5.0] - 2022-07-30
+
 ### Changed
 
 - Updated terraform dependencies (SDKs, plugins...).
@@ -63,7 +65,8 @@
 - Real 1password storage.
 - Terraform registry release.
 
-[unreleased]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/slok/terraform-provider-onepasswordorg/compare/v0.1.0...v0.2.0
