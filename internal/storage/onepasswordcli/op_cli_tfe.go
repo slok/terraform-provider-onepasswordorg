@@ -12,7 +12,7 @@ var (
 	//
 	// Note: We are embedding linux amd64 op binary in all architecture builds.
 	// This will increase in ~10MB the size of all architecture binaries although the
-	// binary only can be used in linux amd64. We assume that tradeoffin favor of compiling
+	// binary only can be used in linux amd64. We assume that tradeoff in favor of compiling
 	// simplicity.
 	EmbeddedOpCli embed.FS
 )
