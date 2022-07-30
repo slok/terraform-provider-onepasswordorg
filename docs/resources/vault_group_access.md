@@ -98,34 +98,34 @@ resource "onepasswordorg_vault_group_access" "business_manage" {
 
 ### Required
 
-- **group_id** (String) The group ID.
-- **permissions** (Attributes) The permissions of the access. Note: Not all permissions are available in all plans, and some permissions require others. More info in [1password docs](https://developer.1password.com/docs/cli/vault-permissions/). (see [below for nested schema](#nestedatt--permissions))
-- **vault_id** (String) The vault ID.
+- `group_id` (String) The group ID.
+- `permissions` (Attributes) The permissions of the access. Note: Not all permissions are available in all plans, and some permissions require others. More info in [1password docs](https://developer.1password.com/docs/cli/vault-permissions/). (see [below for nested schema](#nestedatt--permissions))
+- `vault_id` (String) The vault ID.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
+- `id` (String) The ID of this resource.
 
 <a id="nestedatt--permissions"></a>
 ### Nested Schema for `permissions`
 
-Required:
+Optional:
 
-- **allow_editing** (Boolean)
-- **allow_managing** (Boolean)
-- **allow_viewing** (Boolean)
-- **archive_items** (Boolean)
-- **copy_and_share_items** (Boolean)
-- **create_items** (Boolean)
-- **delete_items** (Boolean)
-- **edit_items** (Boolean)
-- **export_items** (Boolean)
-- **import_items** (Boolean)
-- **manage_vault** (Boolean)
-- **print_items** (Boolean)
-- **view_and_copy_passwords** (Boolean)
-- **view_item_history** (Boolean)
-- **view_items** (Boolean)
+- `allow_editing` (Boolean)
+- `allow_managing` (Boolean)
+- `allow_viewing` (Boolean)
+- `archive_items` (Boolean)
+- `copy_and_share_items` (Boolean)
+- `create_items` (Boolean)
+- `delete_items` (Boolean)
+- `edit_items` (Boolean)
+- `export_items` (Boolean)
+- `import_items` (Boolean)
+- `manage_vault` (Boolean)
+- `print_items` (Boolean)
+- `view_and_copy_passwords` (Boolean)
+- `view_item_history` (Boolean)
+- `view_items` (Boolean)
 
 ## Import
 

@@ -2,92 +2,40 @@ package attributeutils
 
 import (
 	"context"
-	"math/big"
 
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-go/tftypes"
 )
 
+// DefaultValue sets the provided default value if the value is null.
+func DefaultValue(val attr.Value) tfsdk.AttributePlanModifier {
+	return &defaultValue{val}
+}
+
 type defaultValue struct {
-	value attr.Value
+	defaultValue attr.Value
 }
 
-func (d defaultValue) Description(ctx context.Context) string { return "" }
-
-func (d defaultValue) MarkdownDescription(ctx context.Context) string { return "" }
-
-func (d defaultValue) Modify(ctx context.Context, request tfsdk.ModifyAttributePlanRequest, response *tfsdk.ModifyAttributePlanResponse) {
-	result, _, _ := tftypes.WalkAttributePath(request.Config.Raw, tftypes.NewAttributePathWithSteps(request.AttributePath.Steps()))
-
-	isNull := false
-	if result.(tftypes.Value).IsNull() {
-		isNull = true
-	} else if result.(tftypes.Value).Type().Is(tftypes.List{}) {
-		if request.AttributeConfig.(types.List).Null {
-			isNull = true
-		}
-	} else if result.(tftypes.Value).Type().Is(tftypes.Map{}) {
-		if request.AttributeConfig.(types.Map).Null {
-			isNull = true
-		}
-	} else if result.(tftypes.Value).Type().Is(tftypes.Set{}) {
-		if request.AttributeConfig.(types.Set).Null {
-			isNull = true
-		}
-	}
-
-	if isNull {
-		response.AttributePlan = d.value
-	}
+func (d *defaultValue) Description(ctx context.Context) string {
+	return "If the config does not contain a value, a default will be set using defaultValue."
 }
 
-func DefaultNumber(v float64) tfsdk.AttributePlanModifier {
-	return defaultValue{value: types.Number{Value: big.NewFloat(v)}}
+func (d *defaultValue) MarkdownDescription(ctx context.Context) string {
+	return d.Description(ctx)
 }
 
-func DefaultString(v string) tfsdk.AttributePlanModifier {
-	return defaultValue{value: types.String{Value: v}}
-}
-
-func DefaultBool(v bool) tfsdk.AttributePlanModifier {
-	return defaultValue{value: types.Bool{Value: v}}
-}
-
-func DefaultObject(t map[string]attr.Type, v map[string]attr.Value) tfsdk.AttributePlanModifier {
-	return defaultValue{
-		value: types.Object{
-			AttrTypes: t,
-			Attrs:     v,
-		},
+// Modify checks that the value of the attribute in the configuration and assigns the default value if
+// the value in the config is null. This is a destructive operation in that it will overwrite any value
+// present in the plan.
+func (d *defaultValue) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
+	if !req.AttributeConfig.IsNull() {
+		return
 	}
-}
 
-func DefaultListOfNumbers(items ...float64) tfsdk.AttributePlanModifier {
-	values := make([]attr.Value, 0)
+	// Check if someone has already set a value previously.
+	if !req.AttributePlan.IsUnknown() && !req.AttributePlan.IsNull() {
+		return
+	}
 
-	for _, v := range items {
-		values = append(values, types.Number{Value: big.NewFloat(v)})
-	}
-	return defaultValue{
-		value: types.List{
-			ElemType: types.NumberType,
-			Elems:    values,
-		},
-	}
-}
-
-func DefaultListOfStrings(items ...string) tfsdk.AttributePlanModifier {
-	values := make([]attr.Value, 0)
-
-	for _, v := range items {
-		values = append(values, types.String{Value: v})
-	}
-	return defaultValue{
-		value: types.List{
-			ElemType: types.StringType,
-			Elems:    values,
-		},
-	}
+	resp.AttributePlan = d.defaultValue
 }

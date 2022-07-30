@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider"
@@ -23,9 +23,7 @@ import (
 //
 // To run the tests you will need to set `OP_FAKE_STORAGE_PATH` pointing to the fake storage file.
 var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"onepasswordorg": func() (tfprotov6.ProviderServer, error) {
-		return tfsdk.NewProtocol6Server(provider.New()), nil
-	},
+	"onepasswordorg": providerserver.NewProtocol6WithError(provider.New()),
 }
 
 func testAccPreCheck(t *testing.T) {

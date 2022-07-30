@@ -27,11 +27,11 @@ output "user_test" {
 
 ### Required
 
-- **email** (String) The email of the user.
+- `email` (String) The email of the user.
 
 ### Read-Only
 
-- **id** (String) The ID of this resource.
-- **name** (String)
+- `id` (String) The ID of this resource.
+- `name` (String)
 
 

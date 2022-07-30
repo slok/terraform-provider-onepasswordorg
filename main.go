@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider"
 )
+
+const providerName = "registry.terraform.io/slok/onepasswordorg"
 
 func run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err := tfsdk.Serve(ctx, provider.New, tfsdk.ServeOpts{
-		Name: "onepasswordorg",
+	err := providerserver.Serve(ctx, provider.New, providerserver.ServeOpts{
+		Address: providerName,
 	})
 
 	return err
