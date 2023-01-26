@@ -14,6 +14,7 @@ import (
 type repository struct {
 	fakeFilePath         string
 	usersByID            map[string]model.User
+	itemsByID            map[string]model.Item
 	groupsByID           map[string]model.Group
 	membershipByID       map[string]model.Membership
 	vaultsByID           map[string]model.Vault
@@ -31,6 +32,12 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 	users := map[string]model.User{}
 	if fks != nil && fks.Users != nil {
 		users = fks.Users
+	}
+
+	// Initialize storage.
+	items := map[string]model.Item{}
+	if fks != nil && fks.Items != nil {
+		items = fks.Items
 	}
 
 	groups := map[string]model.Group{}
@@ -61,6 +68,7 @@ func NewRepository(fakeFilePath string) (storage.Repository, error) {
 	return &repository{
 		fakeFilePath:         fakeFilePath,
 		usersByID:            users,
+		itemsByID:            items,
 		groupsByID:           groups,
 		membershipByID:       members,
 		vaultsByID:           vaults,
@@ -483,8 +491,94 @@ func (r *repository) GetVaultUserAccessByID(ctx context.Context, vaultID string,
 	return &v, nil
 }
 
+func (r *repository) CreateItem(ctx context.Context, item model.Item) (*model.Item, error) {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	id := item.Title
+	_, ok := r.itemsByID[id]
+	if ok {
+		return nil, fmt.Errorf("item already exists")
+	}
+
+	item.ID = id
+	r.itemsByID[item.ID] = item
+
+	err := r.dumpStorage()
+	if err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+}
+
+func (r *repository) GetItemByID(ctx context.Context, id string) (*model.Item, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	item, ok := r.itemsByID[id]
+	if !ok {
+		return nil, fmt.Errorf("item does not exists")
+	}
+
+	return &item, nil
+}
+
+func (r *repository) GetItemByTitle(ctx context.Context, vaultID string, title string) (*model.Item, error) {
+	r.storageMu.RLock()
+	defer r.storageMu.RUnlock()
+
+	// Fake storage doesn't need optimization.
+	for _, i := range r.itemsByID {
+		if i.Title == title && i.Vault.ID == vaultID {
+			return &i, nil
+		}
+	}
+
+	return nil, fmt.Errorf("group does not exists")
+}
+
+func (r *repository) EnsureItem(ctx context.Context, item model.Item) (*model.Item, error) {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	_, ok := r.itemsByID[item.ID]
+	if !ok {
+		return nil, fmt.Errorf("item doesn't exists")
+	}
+
+	r.itemsByID[item.Title] = item
+
+	err := r.dumpStorage()
+	if err != nil {
+		return nil, err
+	}
+
+	return &item, nil
+}
+
+func (r *repository) DeleteItem(ctx context.Context, id string) error {
+	r.storageMu.Lock()
+	defer r.storageMu.Unlock()
+
+	_, ok := r.itemsByID[id]
+	if !ok {
+		return fmt.Errorf("item doesn't exists")
+	}
+
+	delete(r.itemsByID, id)
+
+	err := r.dumpStorage()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type fakeStorage struct {
 	Users            map[string]model.User
+	Items            map[string]model.Item
 	Groups           map[string]model.Group
 	Members          map[string]model.Membership
 	Vaults           map[string]model.Vault
@@ -495,6 +589,7 @@ type fakeStorage struct {
 func (r *repository) dumpStorage() error {
 	fks := fakeStorage{
 		Users:            r.usersByID,
+		Items:            r.itemsByID,
 		Groups:           r.groupsByID,
 		Members:          r.membershipByID,
 		Vaults:           r.vaultsByID,

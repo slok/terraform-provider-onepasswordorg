@@ -4,206 +4,133 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
-type resourceUserType struct{}
-
-func (r resourceUserType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func resourceUser() *schema.Resource {
+	return &schema.Resource{
 		Description: `
 Provides a User resource.
 
 When a 1password user resources is created, it will be invited  by email.
-`,
-		Attributes: map[string]tfsdk.Attribute{
+    `,
+		CreateContext: resourceUserCreate,
+		ReadContext:   resourceUserRead,
+		UpdateContext: resourceUserUpdate,
+		DeleteContext: resourceUserDelete,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"name": {
-				Type:        types.StringType,
-				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description: "The name of the user.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "The name of the user.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"email": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The email of the user.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				Description:  "The description of the user.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
-	}, nil
+	}
 }
 
-func (r resourceUserType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceUser{
-		p: *prv,
-	}, nil
-}
-
-type resourceUser struct {
-	p provider
-}
-
-func (r resourceUser) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceUserCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfUser User
-	diags := req.Plan.Get(ctx, &tfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	user := dataToUser(data)
 
-	// Create user.
-	u := mapTfToModelUser(tfUser)
-	newUser, err := r.p.repo.CreateUser(ctx, u)
+	newUser, err := p.repo.CreateUser(ctx, user)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating user", "Could not create user, unexpected error: "+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	// Map user to tf model.
-	newTfUser := mapModelToTfUser(*newUser)
+	userToData(*newUser, data)
 
-	diags = resp.State.Set(ctx, newTfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	return diags
 }
 
-func (r resourceUser) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
-	// Retrieve values from plan.
-	var tfUser User
-	diags := req.State.Get(ctx, &tfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+func resourceUserRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
 	// Get user.
-	id := tfUser.ID.Value
-	user, err := r.p.repo.GetUserByID(ctx, id)
+	id := data.Id()
+	user, err := p.repo.GetUserByID(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading user", fmt.Sprintf("Could not get user %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading user:" + fmt.Sprintf("Could not get user %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Map user to tf model.
-	readTfUser := mapModelToTfUser(*user)
-
-	diags = resp.State.Set(ctx, readTfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	userToData(*user, data)
+	return diags
 }
 
-func (r resourceUser) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceUserUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Get plan values.
-	var plan User
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	id := data.Id()
+	g := dataToUser(data)
 
-	// Get current state.
-	var state User
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Use plan user as the new data and set ID from state.
-	u := mapTfToModelUser(plan)
-	u.ID = state.ID.Value
-
-	newUser, err := r.p.repo.EnsureUser(ctx, u)
+	newUser, err := p.repo.EnsureUser(ctx, g)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating user", "Could not update user, unexpected error: "+err.Error())
-		return
+		return diag.Errorf("Error reading user:" + fmt.Sprintf("Could not get user %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Map user to tf model.
-	readTfUser := mapModelToTfUser(*newUser)
-
-	diags = resp.State.Set(ctx, readTfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	userToData(*newUser, data)
+	return diags
 }
 
-func (r resourceUser) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceUserDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfUser User
-	diags := req.State.Get(ctx, &tfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Delete user.
-	id := tfUser.ID.Value
-	err := r.p.repo.DeleteUser(ctx, id)
+	// Get user.
+	id := data.Id()
+	err := p.repo.DeleteUser(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting user", fmt.Sprintf("Could not delete user %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading user:" + fmt.Sprintf("Could not get user %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Remove resource from state.
-	resp.State.RemoveResource(ctx)
+	return diags
 }
 
-func (r resourceUser) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func mapTfToModelUser(u User) model.User {
+func dataToUser(data *schema.ResourceData) model.User {
 	return model.User{
-		ID:    u.ID.Value,
-		Email: u.Email.Value,
-		Name:  u.Name.Value,
+		ID:    data.Id(),
+		Name:  data.Get("name").(string),
+		Email: data.Get("email").(string),
 	}
 }
 
-func mapModelToTfUser(u model.User) User {
-	return User{
-		ID:    types.String{Value: u.ID},
-		Email: types.String{Value: u.Email},
-		Name:  types.String{Value: u.Name},
-	}
+func userToData(user model.User, data *schema.ResourceData) {
+	data.SetId(user.ID)
+	data.Set("name", user.Name)
+	data.Set("email", user.Email)
 }

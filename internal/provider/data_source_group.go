@@ -3,76 +3,49 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type dataSourceGroupType struct{}
+func dataSourceGroupRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
+	}
 
-func (d dataSourceGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+	group_name := data.Get("name").(string)
+	group, err := p.repo.GetGroupByName(ctx, group_name)
+	if err != nil {
+		return diag.Errorf("Error getting group: Could not get group, unexpected error: " + err.Error())
+	}
+
+	data.SetId(group.ID)
+	data.Set("name", group.Name)
+	data.Set("description", group.Description)
+	return diags
+}
+
+func dataSourceGroup() *schema.Resource {
+	return &schema.Resource{
 		Description: `
 Provides information about a 1password group.
 `,
-		Attributes: map[string]tfsdk.Attribute{
+		ReadContext: dataSourceGroupRead,
+		Schema: map[string]*schema.Schema{
 			"name": {
 				Description: "The name of the group.",
 				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Type:        types.StringType,
+				Type:        schema.TypeString,
 			},
 			"description": {
 				Computed: true,
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 			},
 			"id": {
 				Computed: true,
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 			},
 		},
-	}, nil
-}
-
-func (d dataSourceGroupType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return dataSourceGroup{
-		p: *prv,
-	}, nil
-}
-
-type dataSourceGroup struct {
-	p provider
-}
-
-func (d dataSourceGroup) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	if !d.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
-	// Retrieve values.
-	var tfGroup Group
-	diags := req.Config.Get(ctx, &tfGroup)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get group.
-	group, err := d.p.repo.GetGroupByName(ctx, tfGroup.Name.Value)
-	if err != nil {
-		resp.Diagnostics.AddError("Error getting group", "Could not get group, unexpected error: "+err.Error())
-		return
-	}
-
-	newTfGroup := mapModelToTfGroup(*group)
-
-	diags = resp.State.Set(ctx, newTfGroup)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
 	}
 }

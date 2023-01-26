@@ -36,4 +36,10 @@ type Repository interface {
 	EnsureVaultUserAccess(ctx context.Context, userAccess model.VaultUserAccess) error
 	DeleteVaultUserAccess(ctx context.Context, vaultID string, userID string) error
 	GetVaultUserAccessByID(ctx context.Context, vaultID string, userID string) (*model.VaultUserAccess, error)
+
+	CreateItem(ctx context.Context, item model.Item) (*model.Item, error)
+	GetItemByID(ctx context.Context, id string) (*model.Item, error)
+	GetItemByTitle(ctx context.Context, vaultID string, title string) (*model.Item, error)
+	EnsureItem(ctx context.Context, item model.Item) (*model.Item, error)
+	DeleteItem(ctx context.Context, id string) error
 }

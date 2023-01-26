@@ -1,242 +1,151 @@
 package provider
 
 import (
-	"context"
-	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
-type resourceGroupMemberType struct{}
-
-func (r resourceGroupMemberType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func resourceGroupMember() *schema.Resource {
+	return &schema.Resource{
 		Description: `
 Provides a user and group membership.
 
 A 1password group membership will make a user part of a group with a role on that group.
-`,
-		Attributes: map[string]tfsdk.Attribute{
+    `,
+		CreateContext: resourceGroupMemberCreate,
+		ReadContext:   resourceGroupMemberRead,
+		UpdateContext: resourceGroupMemberUpdate,
+		DeleteContext: resourceGroupMemberDelete,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"user_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The user ID.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				Description:  "The user ID.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"group_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The group ID.",
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				Description:  "The group ID.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"role": {
-				Type:          types.StringType,
-				Optional:      true,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "member"})},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The role of the user on the group (can be `member` or `manager`, by default member).",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Default:      "member",
+				Description:  "The role of the user on the group (can be `member` or `manager`, by default member).",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 		},
-	}, nil
+	}
 }
 
-func (r resourceGroupMemberType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceGroupMember{
-		p: *prv,
-	}, nil
-}
-
-type resourceGroupMember struct {
-	p provider
-}
-
-func (r resourceGroupMember) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceGroupMemberCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfMember Member
-	diags := req.Plan.Get(ctx, &tfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Create membership.
-	m, err := mapTfToModelMembership(tfMember)
+	m, err := dataToModelMembership(data)
 	if err != nil {
-		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	err = r.p.repo.EnsureMembership(ctx, *m)
+	err = p.repo.EnsureMembership(ctx, *m)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating membership", "Could not create membership, unexpected error: "+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	// Map to tf model.
-	newTfMember, err := mapModelToTfMembership(*m)
-	if err != nil {
-		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
-		return
-	}
+	mapModelToDataMembership(*m, data)
 
-	// Set on state.
-	diags = resp.State.Set(ctx, newTfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	return diags
 }
 
-func (r resourceGroupMember) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceGroupMemberRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfMember Member
-	diags := req.State.Get(ctx, &tfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get member.
-	id := tfMember.ID.Value
+	id := data.Id()
 	groupID, userID, err := unpackGroupMemberID(id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error getting member ID", "Could not get member ID:"+err.Error())
-		return
+		return diag.Errorf("Error getting member ID: " + "Could not get member ID:" + err.Error())
 	}
 
-	member, err := r.p.repo.GetMembershipByID(ctx, groupID, userID)
+	member, err := p.repo.GetMembershipByID(ctx, groupID, userID)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading membership", fmt.Sprintf("Could not get membership %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading group:" + fmt.Sprintf("Could not get group %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Map user to tf model.
-	readTfMember, err := mapModelToTfMembership(*member)
-	if err != nil {
-		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
-		return
-	}
-
-	diags = resp.State.Set(ctx, readTfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	mapModelToDataMembership(*member, data)
+	return diags
 }
 
-func (r resourceGroupMember) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceGroupMemberUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var plan Member
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	var state Member
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Use plan user as the new data and set ID from state.
-	plan.ID = state.ID
-
-	// Update membership.
-	m, err := mapTfToModelMembership(plan)
+	m, err := dataToModelMembership(data)
 	if err != nil {
-		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	err = r.p.repo.EnsureMembership(ctx, *m)
+	err = p.repo.EnsureMembership(ctx, *m)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating user", "Could not create user, unexpected error: "+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	// Map to tf model.
-	newTfMember, err := mapModelToTfMembership(*m)
-	if err != nil {
-		resp.Diagnostics.AddError("Error mapping member", "Could not map membership:"+err.Error())
-		return
-	}
+	mapModelToDataMembership(*m, data)
 
-	// Set on state.
-	diags = resp.State.Set(ctx, newTfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	return diags
 }
 
-func (r resourceGroupMember) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceGroupMemberDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfMember Member
-	diags := req.State.Get(ctx, &tfMember)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// Get group.
 	// Delete member.
-	id := tfMember.ID.Value
+	id := data.Id()
 	groupID, userID, err := unpackGroupMemberID(id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error getting member ID", "Could not get member ID:"+err.Error())
-		return
+		return diag.Errorf("Error getting member ID: " + "Could not get member ID:" + err.Error())
 	}
 
 	m := model.Membership{GroupID: groupID, UserID: userID}
-	err = r.p.repo.DeleteMembership(ctx, m)
+	err = p.repo.DeleteMembership(ctx, m)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting member", fmt.Sprintf("Could not delete member %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading group:" + fmt.Sprintf("Could not get group %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Remove resource from state.
-	resp.State.RemoveResource(ctx)
-}
-
-func (r resourceGroupMember) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	return diags
 }
 
 const (
@@ -244,13 +153,14 @@ const (
 	tfMemberRoleManager = "manager"
 )
 
-func mapTfToModelMembership(m Member) (*model.Membership, error) {
-	groupID := m.GroupID.Value
-	userID := m.UserID.Value
+func dataToModelMembership(data *schema.ResourceData) (*model.Membership, error) {
+	groupID := data.Get("group_id").(string)
+	userID := data.Get("user_id").(string)
+	id := data.Id()
 
 	// Check the ID is correct.
-	if m.ID.Value != "" {
-		gid, uid, err := unpackGroupMemberID(m.ID.Value)
+	if id != "" {
+		gid, uid, err := unpackGroupMemberID(id)
 		if err != nil {
 			return nil, err
 		}
@@ -265,13 +175,13 @@ func mapTfToModelMembership(m Member) (*model.Membership, error) {
 	}
 
 	var role model.MembershipRole
-	switch m.Role.Value {
+	switch data.Get("role").(string) {
 	case tfMemberRoleMember:
 		role = model.MembershipRoleMember
 	case tfMemberRoleManager:
 		role = model.MembershipRoleManager
 	default:
-		return nil, fmt.Errorf("the role %q is invalid", m.Role.Value)
+		return nil, fmt.Errorf("the role %q is invalid", data.Get("role").(string))
 	}
 
 	return &model.Membership{
@@ -281,7 +191,7 @@ func mapTfToModelMembership(m Member) (*model.Membership, error) {
 	}, nil
 }
 
-func mapModelToTfMembership(m model.Membership) (*Member, error) {
+func mapModelToDataMembership(m model.Membership, data *schema.ResourceData) error {
 	id := packGroupMemberID(m.GroupID, m.UserID)
 
 	var role string
@@ -291,15 +201,14 @@ func mapModelToTfMembership(m model.Membership) (*Member, error) {
 	case model.MembershipRoleManager:
 		role = tfMemberRoleManager
 	default:
-		return nil, fmt.Errorf("the role %q is invalid", m.Role)
+		return fmt.Errorf("the role %q is invalid", m.Role)
 	}
 
-	return &Member{
-		ID:      types.String{Value: id},
-		GroupID: types.String{Value: m.GroupID},
-		UserID:  types.String{Value: m.UserID},
-		Role:    types.String{Value: role},
-	}, nil
+	data.SetId(id)
+	data.Set("group_id", m.GroupID)
+	data.Set("user_id", m.UserID)
+	data.Set("role", role)
+	return nil
 }
 
 func packGroupMemberID(groupID, userID string) string {

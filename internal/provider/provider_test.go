@@ -4,9 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage/fake"
@@ -22,8 +20,15 @@ import (
 // The we can test onepassword integration tests independently from terraform.
 //
 // To run the tests you will need to set `OP_FAKE_STORAGE_PATH` pointing to the fake storage file.
-var testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"onepasswordorg": providerserver.NewProtocol6WithError(provider.New()),
+
+var testAccProviders map[string]*schema.Provider
+var testAccProvider *schema.Provider
+
+func init() {
+	testAccProvider = provider.Provider()
+	testAccProviders = map[string]*schema.Provider{
+		"onepasswordorg": testAccProvider,
+	}
 }
 
 func testAccPreCheck(t *testing.T) {

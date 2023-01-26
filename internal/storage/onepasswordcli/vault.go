@@ -77,7 +77,7 @@ func (r Repository) GetVaultByName(ctx context.Context, name string) (*model.Vau
 
 func (r Repository) EnsureVault(ctx context.Context, vault model.Vault) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.VaultArg().EditArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description)
+	cmdArgs.VaultArg().EditArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description).NameFlag(vault.Name)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {

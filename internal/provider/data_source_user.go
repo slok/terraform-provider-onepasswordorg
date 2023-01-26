@@ -3,76 +3,49 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
-
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type dataSourceUserType struct{}
-
-func (d dataSourceUserType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func dataSourceUser() *schema.Resource {
+	return &schema.Resource{
 		Description: `
 Provides information about a 1password user.
 `,
-		Attributes: map[string]tfsdk.Attribute{
+		ReadContext: dataSourceUserRead,
+		Schema: map[string]*schema.Schema{
 			"email": {
 				Description: "The email of the user.",
 				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Type:        types.StringType,
+				Type:        schema.TypeString,
 			},
 			"name": {
 				Computed: true,
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 			},
 			"id": {
 				Computed: true,
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 			},
 		},
-	}, nil
+	}
 }
 
-func (d dataSourceUserType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return dataSourceUser{
-		p: *prv,
-	}, nil
-}
-
-type dataSourceUser struct {
-	p provider
-}
-
-func (d dataSourceUser) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	if !d.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func dataSourceUserRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values.
-	var tfUser User
-	diags := req.Config.Get(ctx, &tfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get user.
-	user, err := d.p.repo.GetUserByEmail(ctx, tfUser.Email.Value)
+	email := data.Get("email").(string)
+	user, err := p.repo.GetUserByEmail(ctx, email)
 	if err != nil {
-		resp.Diagnostics.AddError("Error getting user", "Could not get user, unexpected error: "+err.Error())
-		return
+		return diag.Errorf("Error getting user: Could not get user, unexpected error: " + err.Error())
 	}
 
-	newTfUser := mapModelToTfUser(*user)
-
-	diags = resp.State.Set(ctx, newTfUser)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	data.SetId(user.ID)
+	data.Set("name", user.Name)
+	data.Set("email", user.Email)
+	return diags
 }

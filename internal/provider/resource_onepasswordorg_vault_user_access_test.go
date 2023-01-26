@@ -24,7 +24,7 @@ func TestAccVaultUserAccessCreateDelete(t *testing.T) {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	  allow_viewing = true
 	  allow_editing = true
 	  allow_managing = true
@@ -48,7 +48,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	allow_viewing = true
   }
 }
@@ -66,7 +66,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	allow_editing = true
   }
 }
@@ -84,7 +84,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	allow_managing = true
   }
 }
@@ -102,7 +102,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	view_items = true
   }
 }
@@ -120,7 +120,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	create_items = true
   }
 }
@@ -138,7 +138,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	edit_items = true
   }
 }
@@ -156,7 +156,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	archive_items = true
   }
 }
@@ -174,7 +174,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	delete_items = true
   }
 }
@@ -192,7 +192,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	view_and_copy_passwords = true
   }
 }
@@ -210,7 +210,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	view_item_history = true
   }
 }
@@ -228,7 +228,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	import_items = true
   }
 }
@@ -246,7 +246,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	export_items = true
   }
 }
@@ -264,7 +264,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	copy_and_share_items = true
   }
 }
@@ -282,7 +282,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	print_items = true
   }
 }
@@ -300,7 +300,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	manage_vault = true
   }
 }
@@ -329,29 +329,29 @@ resource "onepasswordorg_vault_user_access" "test" {
 					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "id", test.expID),
 					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "vault_id", test.expVGA.VaultID),
 					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "user_id", test.expVGA.UserID),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.allow_viewing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowViewing)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.allow_editing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowEditing)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.allow_managing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowManaging)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.view_items", fmt.Sprintf("%t", test.expVGA.Permissions.ViewItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.create_items", fmt.Sprintf("%t", test.expVGA.Permissions.CreateItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.edit_items", fmt.Sprintf("%t", test.expVGA.Permissions.EditItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.archive_items", fmt.Sprintf("%t", test.expVGA.Permissions.ArchiveItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.delete_items", fmt.Sprintf("%t", test.expVGA.Permissions.DeleteItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.view_and_copy_passwords", fmt.Sprintf("%t", test.expVGA.Permissions.ViewAndCopyPasswords)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.view_item_history", fmt.Sprintf("%t", test.expVGA.Permissions.ViewItemHistory)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.import_items", fmt.Sprintf("%t", test.expVGA.Permissions.ImportItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.export_items", fmt.Sprintf("%t", test.expVGA.Permissions.ExportItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.copy_and_share_items", fmt.Sprintf("%t", test.expVGA.Permissions.CopyAndShareItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.print_items", fmt.Sprintf("%t", test.expVGA.Permissions.PrintItems)),
-					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.manage_vault", fmt.Sprintf("%t", test.expVGA.Permissions.ManageVault)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.allow_viewing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowViewing)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.allow_editing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowEditing)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.allow_managing", fmt.Sprintf("%t", test.expVGA.Permissions.AllowManaging)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.view_items", fmt.Sprintf("%t", test.expVGA.Permissions.ViewItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.create_items", fmt.Sprintf("%t", test.expVGA.Permissions.CreateItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.edit_items", fmt.Sprintf("%t", test.expVGA.Permissions.EditItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.archive_items", fmt.Sprintf("%t", test.expVGA.Permissions.ArchiveItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.delete_items", fmt.Sprintf("%t", test.expVGA.Permissions.DeleteItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.view_and_copy_passwords", fmt.Sprintf("%t", test.expVGA.Permissions.ViewAndCopyPasswords)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.view_item_history", fmt.Sprintf("%t", test.expVGA.Permissions.ViewItemHistory)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.import_items", fmt.Sprintf("%t", test.expVGA.Permissions.ImportItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.export_items", fmt.Sprintf("%t", test.expVGA.Permissions.ExportItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.copy_and_share_items", fmt.Sprintf("%t", test.expVGA.Permissions.CopyAndShareItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.print_items", fmt.Sprintf("%t", test.expVGA.Permissions.PrintItems)),
+					resource.TestCheckResourceAttr("onepasswordorg_vault_user_access.test", "permissions.0.manage_vault", fmt.Sprintf("%t", test.expVGA.Permissions.ManageVault)),
 				)
 			}
 
 			// Execute test.
 			resource.Test(t, resource.TestCase{
-				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertVaultUserAccessDeletedOnFakeStorage(t, test.expVGA.VaultID, test.expVGA.UserID),
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: assertVaultUserAccessDeletedOnFakeStorage(t, test.expVGA.VaultID, test.expVGA.UserID),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,
@@ -377,7 +377,7 @@ func TestAccVaultUserAccessrUpdateRole(t *testing.T) {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	  allow_viewing = true
 	  allow_editing = true
 	  allow_managing = true
@@ -387,7 +387,7 @@ resource "onepasswordorg_vault_user_access" "test" {
 resource "onepasswordorg_vault_user_access" "test" {
   vault_id  = "test-vault-id"
   user_id = "test-user-id" 
-  permissions = {
+  permissions {
 	  allow_viewing = false
 	  allow_editing = true
 	  view_and_copy_passwords = true
@@ -417,8 +417,8 @@ resource "onepasswordorg_vault_user_access" "test" {
 
 	// Execute test.
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: configCreate,
