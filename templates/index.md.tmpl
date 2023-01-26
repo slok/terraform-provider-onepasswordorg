@@ -5,6 +5,10 @@ description: |-
   The Onepassword organization provider is used to interact with 1password organization resources (users, groups...)
 ---
 
+# onepasswordorg Provider
+
+This is a fork of slok/onepasswordorg, it adds the onepasswordorg_item resource for managing items.
+
 
 The Onepassword organization provider is used to interact with 1password organization resources (users, groups...)
 Normally this provider will be used to automate the user and groups management like user onboard/offboards or
