@@ -15,6 +15,7 @@ func (r Repository) CreateItem(ctx context.Context, item model.Item) (*model.Ite
 	cmdArgs.ItemArg().CreateArg()
 
 	cmdArgs.EditFieldFlag("title", item.Title)
+	cmdArgs.EditFieldFlag("url", item.URLs[0].URL)
 	cmdArgs.CategoryFlag(item.Category)
 	cmdArgs.VaultFlag(item.Vault.ID)
 
@@ -88,6 +89,7 @@ func (r Repository) EnsureItem(ctx context.Context, item model.Item) (*model.Ite
 	cmdArgs.ItemArg().EditArg().RawStrArg(item.ID)
 
 	cmdArgs.EditFieldFlag("title", item.Title)
+	cmdArgs.EditFieldFlag("url", item.URLs[0].URL)
 	cmdArgs.VaultFlag(item.Vault.ID)
 
 	for _, field := range item.Fields {
