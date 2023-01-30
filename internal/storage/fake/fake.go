@@ -333,6 +333,10 @@ func (r *repository) GetVaultByID(ctx context.Context, id string) (*model.Vault,
 	return &vault, nil
 }
 
+func (r *repository) ListVaultsByUser(ctx context.Context, userID string) (*[]model.Vault, error) {
+	return &[]model.Vault{}, nil
+}
+
 func (r *repository) GetVaultByName(ctx context.Context, name string) (*model.Vault, error) {
 	r.storageMu.RLock()
 	defer r.storageMu.RUnlock()

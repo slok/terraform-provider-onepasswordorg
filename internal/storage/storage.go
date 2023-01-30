@@ -24,6 +24,7 @@ type Repository interface {
 	GetVaultByName(ctx context.Context, name string) (*model.Vault, error)
 	EnsureVault(ctx context.Context, vault model.Vault) (*model.Vault, error)
 	DeleteVault(ctx context.Context, id string) error
+	ListVaultsByUser(ctx context.Context, userID string) (*[]model.Vault, error)
 
 	EnsureMembership(ctx context.Context, membership model.Membership) error
 	DeleteMembership(ctx context.Context, membership model.Membership) error
