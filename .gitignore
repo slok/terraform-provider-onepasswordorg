@@ -41,3 +41,4 @@ terraform
 
 internal/storage/onepasswordcli/op-cli-tfe/op
 dist/
+terraform-provider-onepasswordorg

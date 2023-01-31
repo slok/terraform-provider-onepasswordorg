@@ -23,7 +23,7 @@ type opCli struct {
 }
 
 // NewOpCLI creates a new signed OpCLI command executor.
-func NewOpCli(customCliPath, address, email, secretKey, password string) (OpCli, error) {
+func NewOpCli(customCliPath, address, email, secretKey, password string, otp string) (OpCli, error) {
 	binPath, err := prepareOpCliBinary(customCliPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not prepare op cli: %w", err)
@@ -42,6 +42,16 @@ func NewOpCli(customCliPath, address, email, secretKey, password string) (OpCli,
 			fmt.Printf("ERROR: %s\n", err)
 		}
 	}()
+
+	if otp != "" {
+		go func() {
+			defer stdin.Close()
+			_, err := io.WriteString(stdin, fmt.Sprintf("%s\n", otp))
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err)
+			}
+		}()
+	}
 
 	result, err := cmd.CombinedOutput()
 	if err != nil {

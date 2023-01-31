@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"context"
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage/fake"
@@ -15,6 +17,7 @@ const (
 	envVarOpEmail           = "OP_EMAIL"
 	envVarOpSecretKey       = "OP_SECRET_KEY"
 	envVarOpPassword        = "OP_PASSWORD"
+	envVarOpOtp             = "OP_OTP"
 	EnvVarOpFakeStoragePath = "OP_FAKE_STORAGE_PATH"
 	EnvVarOpCliPath         = "OP_CLI_PATH"
 )
@@ -30,6 +33,7 @@ type providerData struct {
 	Email           string
 	SecretKey       string
 	Password        string
+	Otp             string
 	FakeStoragePath string
 	CliPath         string
 }
@@ -83,6 +87,19 @@ func (p *ProviderConfig) configureSecretKey(config providerData) (string, error)
 	}
 
 	return secretKey, nil
+}
+
+func (p *ProviderConfig) configureOtp(config providerData) (string, error) {
+
+	// If not set get from env, the value has priority.
+	var otp string
+	if config.Otp == "" {
+		otp = os.Getenv(envVarOpOtp)
+	} else {
+		otp = config.Otp
+	}
+
+	return otp, nil
 }
 
 func (p *ProviderConfig) configurePassword(config providerData) (string, error) {
@@ -152,6 +169,12 @@ func Provider() *schema.Provider {
 				Sensitive:   true,
 				Description: fmt.Sprintf("Set account 1password password. Also `%s` env var can be used.", envVarOpPassword),
 			},
+			"otp": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				Description: fmt.Sprintf("Set account 1password otp when 2FA is enabeled. Also `%s` env var can be used.", envVarOpOtp),
+			},
 			"fake_storage_path": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -179,13 +202,14 @@ func Provider() *schema.Provider {
 			"onepasswordorg_vault_user_access":  resourceVaultUserAccess(),
 		},
 	}
-	provider.ConfigureFunc = func(d *schema.ResourceData) (interface{}, error) {
+	provider.ConfigureContextFunc = func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
 		p := ProviderConfig{}
 		config := providerData{
 			Address:         d.Get("address").(string),
 			Email:           d.Get("email").(string),
 			SecretKey:       d.Get("secret_key").(string),
 			Password:        d.Get("password").(string),
+			Otp:             d.Get("otp").(string),
 			FakeStoragePath: d.Get("fake_storage_path").(string),
 			CliPath:         d.Get("op_cli_path").(string),
 		}
@@ -198,7 +222,7 @@ func Provider() *schema.Provider {
 		// Get if we are in fake mode.
 		fakeStoragePath, err := p.configureFakeStoragePath(config)
 		if err != nil {
-			return nil, fmt.Errorf(configErrSummary + "Invalid fake storage path:\n\n" + err.Error())
+			return nil, diag.Errorf(configErrSummary + "Invalid fake storage path:\n\n" + err.Error())
 		}
 
 		// Create fake or regular mode.
@@ -208,44 +232,49 @@ func Provider() *schema.Provider {
 		if fakeStoragePath != "" {
 			repo, err = fake.NewRepository(fakeStoragePath)
 			if err != nil {
-				return nil, fmt.Errorf(createErrSummary + "Unable to create 1password fake storage:\n\n" + err.Error())
+				return nil, diag.Errorf(createErrSummary + "Unable to create 1password fake storage:\n\n" + err.Error())
 			}
 		} else {
 			address, err := p.configureAddress(config)
 			if err != nil {
-				return nil, fmt.Errorf(configErrSummary + "Invalid address:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid address:\n\n" + err.Error())
 			}
 
 			email, err := p.configureEmail(config)
 			if err != nil {
-				return nil, fmt.Errorf(configErrSummary + "Invalid email:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid email:\n\n" + err.Error())
 			}
 
 			secretKey, err := p.configureSecretKey(config)
 			if err != nil {
-				return nil, fmt.Errorf(configErrSummary + "Invalid secret key:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid secret key:\n\n" + err.Error())
 			}
 
 			password, err := p.configurePassword(config)
 			if err != nil {
-				return nil, fmt.Errorf(configErrSummary + "Invalid password:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid password:\n\n" + err.Error())
+			}
+
+			otp, err := p.configureOtp(config)
+			if err != nil {
+				return nil, diag.Errorf(configErrSummary + "Invalid otp:\n\n" + err.Error())
 			}
 
 			cliPath, err := p.configureCliPath(config)
 			if err != nil {
-				return nil, fmt.Errorf(configErrSummary + "Invalid cli path:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid cli path:\n\n" + err.Error())
 			}
 
 			// Create OP cli.
-			cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password)
+			cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password, otp)
 			if err != nil {
-				return nil, fmt.Errorf(createErrSummary + "Unable to create 1password op cmd client:\n\n" + err.Error())
+				return nil, diag.Errorf(createErrSummary + "Unable to create 1password op cmd client:\n\n" + err.Error())
 			}
 
 			// Create  repository.
 			repo, err = onepasswordcli.NewRepository(cli)
 			if err != nil {
-				return nil, fmt.Errorf(createErrSummary + "Unable to create 1password op repository:\n\n" + err.Error())
+				return nil, diag.Errorf(createErrSummary + "Unable to create 1password op repository:\n\n" + err.Error())
 			}
 		}
 		p.repo = repo
