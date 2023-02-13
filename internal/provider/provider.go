@@ -17,7 +17,7 @@ const (
 	envVarOpEmail           = "OP_EMAIL"
 	envVarOpSecretKey       = "OP_SECRET_KEY"
 	envVarOpPassword        = "OP_PASSWORD"
-	envVarOpOtp             = "OP_OTP"
+	envVarOpShorthand       = "OP_SHORTHAND"
 	EnvVarOpFakeStoragePath = "OP_FAKE_STORAGE_PATH"
 	EnvVarOpCliPath         = "OP_CLI_PATH"
 )
@@ -33,7 +33,7 @@ type providerData struct {
 	Email           string
 	SecretKey       string
 	Password        string
-	Otp             string
+	Shorthand       string
 	FakeStoragePath string
 	CliPath         string
 }
@@ -89,17 +89,17 @@ func (p *ProviderConfig) configureSecretKey(config providerData) (string, error)
 	return secretKey, nil
 }
 
-func (p *ProviderConfig) configureOtp(config providerData) (string, error) {
+func (p *ProviderConfig) configureShorthand(config providerData) (string, error) {
 
 	// If not set get from env, the value has priority.
-	var otp string
-	if config.Otp == "" {
-		otp = os.Getenv(envVarOpOtp)
+	var shorthand string
+	if config.Shorthand == "" {
+		shorthand = os.Getenv(envVarOpShorthand)
 	} else {
-		otp = config.Otp
+		shorthand = config.Shorthand
 	}
 
-	return otp, nil
+	return shorthand, nil
 }
 
 func (p *ProviderConfig) configurePassword(config providerData) (string, error) {
@@ -169,11 +169,11 @@ func Provider() *schema.Provider {
 				Sensitive:   true,
 				Description: fmt.Sprintf("Set account 1password password. Also `%s` env var can be used.", envVarOpPassword),
 			},
-			"otp": {
+			"shorthand": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Sensitive:   true,
-				Description: fmt.Sprintf("Set account 1password otp when 2FA is enabeled. Also `%s` env var can be used.", envVarOpOtp),
+				Description: fmt.Sprintf("Set account 1password shorthand when 2FA is enabeled. Also `%s` env var can be used.", envVarOpShorthand),
 			},
 			"fake_storage_path": {
 				Type:        schema.TypeString,
@@ -209,7 +209,7 @@ func Provider() *schema.Provider {
 			Email:           d.Get("email").(string),
 			SecretKey:       d.Get("secret_key").(string),
 			Password:        d.Get("password").(string),
-			Otp:             d.Get("otp").(string),
+			Shorthand:       d.Get("shorthand").(string),
 			FakeStoragePath: d.Get("fake_storage_path").(string),
 			CliPath:         d.Get("op_cli_path").(string),
 		}
@@ -255,9 +255,9 @@ func Provider() *schema.Provider {
 				return nil, diag.Errorf(configErrSummary + "Invalid password:\n\n" + err.Error())
 			}
 
-			otp, err := p.configureOtp(config)
+			shorthand, err := p.configureShorthand(config)
 			if err != nil {
-				return nil, diag.Errorf(configErrSummary + "Invalid otp:\n\n" + err.Error())
+				return nil, diag.Errorf(configErrSummary + "Invalid shorthand:\n\n" + err.Error())
 			}
 
 			cliPath, err := p.configureCliPath(config)
@@ -266,7 +266,7 @@ func Provider() *schema.Provider {
 			}
 
 			// Create OP cli.
-			cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password, otp)
+			cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password, shorthand)
 			if err != nil {
 				return nil, diag.Errorf(createErrSummary + "Unable to create 1password op cmd client:\n\n" + err.Error())
 			}
