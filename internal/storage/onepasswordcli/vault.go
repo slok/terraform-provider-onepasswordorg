@@ -55,6 +55,29 @@ func (r Repository) GetVaultByID(ctx context.Context, id string) (*model.Vault, 
 	return &gotVault, nil
 }
 
+func (r Repository) ListVaultsByUser(ctx context.Context, userID string) (*[]model.Vault, error) {
+	cmdArgs := &onePasswordCliCmd{}
+	cmdArgs.VaultArg().ListArg().UserFlag(userID).FormatJSONFlag()
+
+	stdout, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
+	if err != nil {
+		return nil, fmt.Errorf("op cli command failed: %w: %s", err, stderr)
+	}
+
+	ov := []opVault{}
+	err = json.Unmarshal([]byte(stdout), &ov)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal op cli stdout: %w", err)
+	}
+
+	gotVault := []model.Vault{}
+	for _, a := range ov {
+		gotVault = append(gotVault, mapOpToModeVault(a))
+	}
+
+	return &gotVault, nil
+}
+
 func (r Repository) GetVaultByName(ctx context.Context, name string) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
 	cmdArgs.VaultArg().GetArg().RawStrArg(name).FormatJSONFlag()
@@ -77,7 +100,7 @@ func (r Repository) GetVaultByName(ctx context.Context, name string) (*model.Vau
 
 func (r Repository) EnsureVault(ctx context.Context, vault model.Vault) (*model.Vault, error) {
 	cmdArgs := &onePasswordCliCmd{}
-	cmdArgs.VaultArg().EditArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description)
+	cmdArgs.VaultArg().EditArg().RawStrArg(vault.ID).DescriptionFlag(vault.Description).NameFlag(vault.Name)
 
 	_, stderr, err := r.cli.RunOpCmd(ctx, cmdArgs.GetArgs())
 	if err != nil {

@@ -82,7 +82,7 @@ resource "onepasswordorg_group_member" "test_member" {
   role     = "invalid-role"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Error: expected \"group_id\" to not be an empty string"),
 		},
 
 		"A non set user id should fail.": {
@@ -103,7 +103,7 @@ resource "onepasswordorg_group_member" "test_member" {
   role     = "invalid-role"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Error: expected \"user_id\" to not be an empty string"),
 		},
 	}
 
@@ -128,9 +128,9 @@ resource "onepasswordorg_group_member" "test_member" {
 
 			// Execute test.
 			resource.Test(t, resource.TestCase{
-				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertGroupMemberDeletedOnFakeStorage(t, test.expMember.GroupID, test.expMember.UserID),
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: assertGroupMemberDeletedOnFakeStorage(t, test.expMember.GroupID, test.expMember.UserID),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,
@@ -180,8 +180,8 @@ resource "onepasswordorg_group_member" "test_member" {
 
 	// Execute test.
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: configCreate,

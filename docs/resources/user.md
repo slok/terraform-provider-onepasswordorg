@@ -27,7 +27,7 @@ resource "onepasswordorg_user" "user0" {
 
 ### Required
 
-- `email` (String) The email of the user.
+- `email` (String) The description of the user.
 - `name` (String) The name of the user.
 
 ### Read-Only

@@ -62,7 +62,7 @@ resource "onepasswordorg_vault" "test" {
 	name = ""
 }
 		`,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Error: expected \"name\" to not be an empty string"),
 		},
 	}
 
@@ -86,9 +86,9 @@ resource "onepasswordorg_vault" "test" {
 
 			// Execute test.
 			resource.Test(t, resource.TestCase{
-				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertVaultDeletedOnFakeStorage(t, test.expVault.ID),
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: assertVaultDeletedOnFakeStorage(t, test.expVault.ID),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,
@@ -138,8 +138,8 @@ resource "onepasswordorg_vault" "test" {
 
 	// Execute test.
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: configCreate,

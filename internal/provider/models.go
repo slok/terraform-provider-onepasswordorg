@@ -10,6 +10,26 @@ type User struct {
 	Name  types.String `tfsdk:"name"`
 }
 
+type Item struct {
+	ID      types.String `tfsdk:"id"`
+	VaultID types.String `tfsdk:"vault"`
+	Title   types.String `tfsdk:"title"`
+	Section []Section    `tfsdk:"section"`
+}
+
+type Section struct {
+	ID    types.String `tfsdk:"id"`
+	Field []Field      `tfsdk:"field"`
+}
+
+type Field struct {
+	ID      types.String `tfsdk:"id"`
+	Label   types.String `tfsdk:"label"`
+	Type    types.String `tfsdk:"type"`
+	Value   types.String `tfsdk:"value"`
+	Purpose types.String `tfsdk:"purpose"`
+}
+
 type Group struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`

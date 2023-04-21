@@ -151,7 +151,7 @@ func TestRepositoryEnsureVault(t *testing.T) {
 		"Updating a vault correctly, should update the user data.": {
 			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `vault edit test-id --description Test00`
+				expCmd := `vault edit test-id --description Test00 --name test-00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", nil)
 			},
 			expVault: &model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
@@ -160,7 +160,7 @@ func TestRepositoryEnsureVault(t *testing.T) {
 		"Having an error while calling the op CLI, should fail.": {
 			vault: model.Vault{ID: "test-id", Name: "test-00", Description: "Test00"},
 			mock: func(m *onepasswordclimock.OpCli) {
-				expCmd := `vault edit test-id --description Test00`
+				expCmd := `vault edit test-id --description Test00 --name test-00`
 				m.On("RunOpCmd", mock.Anything, strings.Fields(expCmd)).Once().Return("", "", fmt.Errorf("something"))
 			},
 			expErr: true,

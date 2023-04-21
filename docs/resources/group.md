@@ -4,6 +4,7 @@ page_title: "onepasswordorg_group Resource - terraform-provider-onepasswordorg"
 subcategory: ""
 description: |-
   Provides a Group resource.
+  
   A 1password group is like a team that can contain people and can be used to give access to vaults as a
   group of users.
 ---
@@ -12,8 +13,8 @@ description: |-
 
 Provides a Group resource.
 
-A 1password group is like a team that can contain people and can be used to give access to vaults as a
-group of users.
+    A 1password group is like a team that can contain people and can be used to give access to vaults as a
+    group of users.
 
 ## Example Usage
 

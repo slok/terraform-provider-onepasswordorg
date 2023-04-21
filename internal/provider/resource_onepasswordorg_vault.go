@@ -4,205 +4,132 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
 )
 
 type resourceVaultType struct{}
 
-func (r resourceVaultType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func resourceVault() *schema.Resource {
+	return &schema.Resource{
 		Description: `
 Provides a vault resource.
-`,
-		Attributes: map[string]tfsdk.Attribute{
+    `,
+		CreateContext: resourceVaultCreate,
+		ReadContext:   resourceVaultRead,
+		UpdateContext: resourceVaultUpdate,
+		DeleteContext: resourceVaultDelete,
+
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+		Schema: map[string]*schema.Schema{
 			"id": {
-				Type:     types.StringType,
+				Type:     schema.TypeString,
 				Computed: true,
 			},
 			"name": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The name of the vault.",
+				Type:         schema.TypeString,
+				Required:     true,
+				Description:  "The name of the vault.",
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 			"description": {
-				Type:          types.StringType,
-				Optional:      true,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "Managed by Terraform"})},
-				Description:   "The description of the vault.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "Managed by Terraform",
+				Description: "The description of the vault.",
 			},
 		},
-	}, nil
+	}
 }
 
-func (r resourceVaultType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceVault{
-		p: *prv,
-	}, nil
-}
-
-type resourceVault struct {
-	p provider
-}
-
-func (r resourceVault) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceVaultCreate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfVault Vault
-	diags := req.Plan.Get(ctx, &tfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	vault := dataToVault(data)
 
-	// Create vault.
-	v := mapTfToModelVault(tfVault)
-	newVault, err := r.p.repo.CreateVault(ctx, v)
+	newVault, err := p.repo.CreateVault(ctx, vault)
 	if err != nil {
-		resp.Diagnostics.AddError("Error creating vault", "Could not create vault, unexpected error: "+err.Error())
-		return
+		return diag.Errorf(err.Error())
 	}
 
-	// Map to tf model.
-	newTfVault := mapModelToTfVault(*newVault)
+	vaultToData(*newVault, data)
 
-	diags = resp.State.Set(ctx, newTfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	return diags
 }
 
-func (r resourceVault) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceVaultRead(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfVault Vault
-	diags := req.State.Get(ctx, &tfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Get resource.
-	id := tfVault.ID.Value
-	vault, err := r.p.repo.GetVaultByID(ctx, id)
+	// Get vault.
+	id := data.Id()
+	vault, err := p.repo.GetVaultByID(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error reading vault", fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading vault:" + fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Map resource to tf model.
-	readTfVault := mapModelToTfVault(*vault)
-
-	diags = resp.State.Set(ctx, readTfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	vaultToData(*vault, data)
+	return diags
 }
 
-func (r resourceVault) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceVaultUpdate(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Get plan values.
-	var plan Vault
-	diags := req.Plan.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	id := data.Id()
+	vault := dataToVault(data)
 
-	// Get current state.
-	var state Vault
-	diags = req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Use plan group as the new data and set ID from state.
-	v := mapTfToModelVault(plan)
-	v.ID = state.ID.Value
-
-	newVault, err := r.p.repo.EnsureVault(ctx, v)
+	newVault, err := p.repo.EnsureVault(ctx, vault)
 	if err != nil {
-		resp.Diagnostics.AddError("Error updating vault", "Could not update vault, unexpected error: "+err.Error())
-		return
+		return diag.Errorf("Error reading vault:" + fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Map vault to tf model.
-	readTfVault := mapModelToTfVault(*newVault)
-
-	diags = resp.State.Set(ctx, readTfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	vaultToData(*newVault, data)
+	return diags
 }
 
-func (r resourceVault) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
+func resourceVaultDelete(ctx context.Context, data *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	p := meta.(ProviderConfig)
+	var diags diag.Diagnostics
+	if !p.configured {
+		return diag.Errorf("Provider not configured:" + "The provider hasn't been configured before apply.")
 	}
 
-	// Retrieve values from plan.
-	var tfVault Vault
-	diags := req.State.Get(ctx, &tfVault)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// Delete resource.
-	id := tfVault.ID.Value
-	err := r.p.repo.DeleteVault(ctx, id)
+	// Get vault.
+	id := data.Id()
+	err := p.repo.DeleteVault(ctx, id)
 	if err != nil {
-		resp.Diagnostics.AddError("Error deleting vault", fmt.Sprintf("Could not delete vault %q, unexpected error: %s", id, err.Error()))
-		return
+		return diag.Errorf("Error reading vault:" + fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
 	}
 
-	// Remove resource from state.
-	resp.State.RemoveResource(ctx)
+	return diags
 }
 
-func (r resourceVault) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func mapTfToModelVault(v Vault) model.Vault {
+func dataToVault(data *schema.ResourceData) model.Vault {
 	return model.Vault{
-		ID:          v.ID.Value,
-		Name:        v.Name.Value,
-		Description: v.Description.Value,
+		ID:          data.Id(),
+		Name:        data.Get("name").(string),
+		Description: data.Get("description").(string),
 	}
 }
 
-func mapModelToTfVault(u model.Vault) Vault {
-	return Vault{
-		ID:          types.String{Value: u.ID},
-		Name:        types.String{Value: u.Name},
-		Description: types.String{Value: u.Description},
-	}
+func vaultToData(vault model.Vault, data *schema.ResourceData) {
+	data.SetId(vault.ID)
+	data.Set("name", vault.Name)
+	data.Set("description", vault.Description)
 }

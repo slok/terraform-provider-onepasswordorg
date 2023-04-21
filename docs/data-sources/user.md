@@ -33,5 +33,14 @@ output "user_test" {
 
 - `id` (String) The ID of this resource.
 - `name` (String)
+- `vaults` (List of Object) List vaults that the user has access to. (see [below for nested schema](#nestedatt--vaults))
+
+<a id="nestedatt--vaults"></a>
+### Nested Schema for `vaults`
+
+Read-Only:
+
+- `id` (String)
+- `name` (String)
 
 

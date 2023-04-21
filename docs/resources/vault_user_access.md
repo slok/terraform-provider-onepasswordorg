@@ -98,15 +98,18 @@ resource "onepasswordorg_vault_user_access" "business_manage" {
 
 ### Required
 
-- `permissions` (Attributes) The permissions of the access. Note: Not all permissions are available in all plans, and some permissions require others. More info in [1password docs](https://developer.1password.com/docs/cli/vault-permissions/). (see [below for nested schema](#nestedatt--permissions))
 - `user_id` (String) The user ID.
 - `vault_id` (String) The vault ID.
+
+### Optional
+
+- `permissions` (Block List) The permissions of the access. Note: Not all permissions are available in all plans, and some permissions require others. More info in [1password docs](https://developer.1password.com/docs/cli/vault-permissions/). (see [below for nested schema](#nestedblock--permissions))
 
 ### Read-Only
 
 - `id` (String) The ID of this resource.
 
-<a id="nestedatt--permissions"></a>
+<a id="nestedblock--permissions"></a>
 ### Nested Schema for `permissions`
 
 Optional:

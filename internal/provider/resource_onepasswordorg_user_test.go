@@ -48,7 +48,7 @@ resource "onepasswordorg_user" "test_user" {
   email = "testuser@test.test"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Error: expected \"name\" to not be an empty string"),
 		},
 
 		"A non set email should fail.": {
@@ -67,7 +67,7 @@ resource "onepasswordorg_user" "test_user" {
   email = ""
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Error: expected \"email\" to not be an empty string"),
 		},
 	}
 
@@ -91,9 +91,9 @@ resource "onepasswordorg_user" "test_user" {
 
 			// Execute test.
 			resource.Test(t, resource.TestCase{
-				PreCheck:                 func() { testAccPreCheck(t) },
-				ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
-				CheckDestroy:             assertUserDeletedOnFakeStorage(t, test.expUser.Email),
+				PreCheck:     func() { testAccPreCheck(t) },
+				Providers:    testAccProviders,
+				CheckDestroy: assertUserDeletedOnFakeStorage(t, test.expUser.Email),
 				Steps: []resource.TestStep{
 					{
 						Config:      test.config,
@@ -142,8 +142,8 @@ resource "onepasswordorg_user" "test_user" {
 
 	// Execute test.
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { testAccPreCheck(t) },
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		PreCheck:  func() { testAccPreCheck(t) },
+		Providers: testAccProviders,
 		Steps: []resource.TestStep{
 			{
 				Config: configCreate,
