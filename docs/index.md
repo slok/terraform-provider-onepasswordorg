@@ -75,3 +75,4 @@ resource "onepasswordorg_group_member" "test_test" {
 - `op_cli_path` (String) The path that points to the op cli binary. Also `OP_CLI_PATH` env var can be used. (by default `op` on system path, ignored if run in Terraform cloud).
 - `password` (String, Sensitive) Set account 1password password. Also `OP_PASSWORD` env var can be used.
 - `secret_key` (String, Sensitive) Set account 1password secret key. Also `OP_SECRET_KEY` env var can be used.
+- `shorthand` (String, Sensitive) Set account 1password shorthand when 2FA is enabeled. Also `OP_SHORTHAND` env var can be used.
