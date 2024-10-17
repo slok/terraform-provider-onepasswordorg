@@ -2,13 +2,16 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Update Go version to v1.23.
+
 ## [v0.5.0] - 2022-07-30
 
 ### Changed
 
 - Updated terraform dependencies (SDKs, plugins...).
 - Updated TFE embedded `op` CLI to 2.6.0.
-
 
 ## [v0.4.0] - 2022-03-18
 

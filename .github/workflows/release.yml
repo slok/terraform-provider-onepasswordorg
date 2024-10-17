@@ -22,19 +22,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Unshallow
         run: git fetch --prune --unshallow
 
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
-          go-version: "1.18"
+          go-version-file: go.mod
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5.1.0
+        uses: crazy-max/ghaction-import-gpg@v6.1.0
         with:
           # These secrets will need to be configured for the repository:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -42,13 +42,13 @@ jobs:
 
       - name: Download OP cli (to embed on the binary)
         run: |
-            cd /tmp
-            curl https://cache.agilebits.com/dist/1P/op2/pkg/v${OP_CLI_VERSION}/op_linux_amd64_v${OP_CLI_VERSION}.zip -o ./op.zip && unzip ./op.zip
-            cd -
-            sudo mv /tmp/op ./internal/storage/onepasswordcli/op-cli-tfe/op
+          cd /tmp
+          curl https://cache.agilebits.com/dist/1P/op2/pkg/v${OP_CLI_VERSION}/op_linux_amd64_v${OP_CLI_VERSION}.zip -o ./op.zip && unzip ./op.zip
+          cd -
+          sudo mv /tmp/op ./internal/storage/onepasswordcli/op-cli-tfe/op
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --rm-dist
