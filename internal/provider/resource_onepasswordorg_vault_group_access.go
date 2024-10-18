@@ -5,63 +5,81 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type resourceVaultGroupAccessType struct{}
+var (
+	_ resource.Resource                = &vaultUserAccessResource{}
+	_ resource.ResourceWithConfigure   = &vaultUserAccessResource{}
+	_ resource.ResourceWithImportState = &vaultUserAccessResource{}
+)
 
-func (r resourceVaultGroupAccessType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewVaultGroupAccessResource() resource.Resource {
+	return &vaultGroupAccessResource{}
+}
+
+type vaultGroupAccessResource struct {
+	repo storage.Repository
+}
+
+func (r *vaultGroupAccessResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_vault_group_access"
+}
+
+func (r *vaultGroupAccessResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides vault access for a group.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"vault_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The vault ID.",
+			"vault_id": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "The vault ID.",
 			},
-			"group_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The group ID.",
+			"group_id": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "The group ID.",
 			},
 			"permissions": permissionsAttribute,
 		},
-	}, nil
+	}
 }
 
-func (r resourceVaultGroupAccessType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceVaultGroupAccess{
-		p: *prv,
-	}, nil
-}
-
-type resourceVaultGroupAccess struct {
-	p provider
-}
-
-func (r resourceVaultGroupAccess) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (r *vaultGroupAccessResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	appServices := getAppServicesFromResourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	r.repo = appServices.Repository
+}
+
+func (r vaultGroupAccessResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var tfvga VaultGroupAccess
 	diags := req.Plan.Get(ctx, &tfvga)
@@ -77,7 +95,7 @@ func (r resourceVaultGroupAccess) Create(ctx context.Context, req tfsdk.CreateRe
 		return
 	}
 
-	err = r.p.repo.EnsureVaultGroupAccess(ctx, *v)
+	err = r.repo.EnsureVaultGroupAccess(ctx, *v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating access", "Could not create access, unexpected error: "+err.Error())
 		return
@@ -98,12 +116,7 @@ func (r resourceVaultGroupAccess) Create(ctx context.Context, req tfsdk.CreateRe
 	}
 }
 
-func (r resourceVaultGroupAccess) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r vaultGroupAccessResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from plan.
 	var tfVaultGroupAccess VaultGroupAccess
 	diags := req.State.Get(ctx, &tfVaultGroupAccess)
@@ -113,14 +126,14 @@ func (r resourceVaultGroupAccess) Read(ctx context.Context, req tfsdk.ReadResour
 	}
 
 	// Get access.
-	id := tfVaultGroupAccess.ID.Value
+	id := tfVaultGroupAccess.ID.ValueString()
 	vaultID, groupID, err := unpackVaultGroupAccessID(id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting access ID", "Could not get access ID:"+err.Error())
 		return
 	}
 
-	access, err := r.p.repo.GetVaultGroupAccessByID(ctx, vaultID, groupID)
+	access, err := r.repo.GetVaultGroupAccessByID(ctx, vaultID, groupID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading access", fmt.Sprintf("Could not get access %q, unexpected error: %s", id, err.Error()))
 		return
@@ -140,12 +153,7 @@ func (r resourceVaultGroupAccess) Read(ctx context.Context, req tfsdk.ReadResour
 	}
 }
 
-func (r resourceVaultGroupAccess) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r vaultGroupAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
 	var plan VaultGroupAccess
 	diags := req.Plan.Get(ctx, &plan)
@@ -171,7 +179,7 @@ func (r resourceVaultGroupAccess) Update(ctx context.Context, req tfsdk.UpdateRe
 		return
 	}
 
-	err = r.p.repo.EnsureVaultGroupAccess(ctx, *v)
+	err = r.repo.EnsureVaultGroupAccess(ctx, *v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating access", "Could not create access, unexpected error: "+err.Error())
 		return
@@ -192,12 +200,7 @@ func (r resourceVaultGroupAccess) Update(ctx context.Context, req tfsdk.UpdateRe
 	}
 }
 
-func (r resourceVaultGroupAccess) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r vaultGroupAccessResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from plan.
 	var tfVaultGroupAccess VaultGroupAccess
 	diags := req.State.Get(ctx, &tfVaultGroupAccess)
@@ -207,14 +210,14 @@ func (r resourceVaultGroupAccess) Delete(ctx context.Context, req tfsdk.DeleteRe
 	}
 
 	// Delete resource.
-	id := tfVaultGroupAccess.ID.Value
+	id := tfVaultGroupAccess.ID.ValueString()
 	vaultID, groupID, err := unpackVaultGroupAccessID(id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting access ID", "Could not get access ID:"+err.Error())
 		return
 	}
 
-	err = r.p.repo.DeleteVaultGroupAccess(ctx, vaultID, groupID)
+	err = r.repo.DeleteVaultGroupAccess(ctx, vaultID, groupID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting access", fmt.Sprintf("Could not delete access %q, unexpected error: %s", id, err.Error()))
 		return
@@ -224,18 +227,17 @@ func (r resourceVaultGroupAccess) Delete(ctx context.Context, req tfsdk.DeleteRe
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceVaultGroupAccess) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *vaultGroupAccessResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func mapTfToModelVaultGroupAccess(m VaultGroupAccess) (*model.VaultGroupAccess, error) {
-	groupID := m.GroupID.Value
-	vaultID := m.VaultID.Value
+	groupID := m.GroupID.ValueString()
+	vaultID := m.VaultID.ValueString()
 
 	// Check the ID is correct.
-	if m.ID.Value != "" {
-		vid, gid, err := unpackVaultGroupAccessID(m.ID.Value)
+	if m.ID.ValueString() != "" {
+		vid, gid, err := unpackVaultGroupAccessID(m.ID.ValueString())
 		if err != nil {
 			return nil, err
 		}
@@ -260,9 +262,9 @@ func mapModelToTfVaultGroupAccess(m model.VaultGroupAccess) (*VaultGroupAccess, 
 	id := packVaultGroupAccessID(m.VaultID, m.GroupID)
 
 	return &VaultGroupAccess{
-		ID:          types.String{Value: id},
-		GroupID:     types.String{Value: m.GroupID},
-		VaultID:     types.String{Value: m.VaultID},
+		ID:          types.StringValue(id),
+		GroupID:     types.StringValue(m.GroupID),
+		VaultID:     types.StringValue(m.VaultID),
 		Permissions: mapModelToTfAccessPermissions(m.Permissions),
 	}, nil
 }

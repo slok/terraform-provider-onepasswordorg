@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider"
@@ -61,14 +61,14 @@ resource "onepasswordorg_group_member" "test_member" {
   role     = "invalid-role"
 }
 `,
-			expErr: regexp.MustCompile(`the role "invalid-role" is invalid`),
+			expErr: regexp.MustCompile(`Attribute role value must be one of: \["member" "manager"\], got:\s*"invalid-role"`),
 		},
 
 		"A non set group id should fail.": {
 			config: `
 resource "onepasswordorg_group_member" "test_member" {
   user_id  = "test-user-id"
-  role     = "invalid-role"
+  role     = "member"
 }
 `,
 			expErr: regexp.MustCompile("Missing required argument"),
@@ -79,17 +79,17 @@ resource "onepasswordorg_group_member" "test_member" {
 resource "onepasswordorg_group_member" "test_member" {
   group_id = ""
   user_id  = "test-user-id"
-  role     = "invalid-role"
+  role     = "member"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Attribute group_id string length must be at least 1, got: 0"),
 		},
 
 		"A non set user id should fail.": {
 			config: `
 resource "onepasswordorg_group_member" "test_member" {
   group_id = "test-group-id"
-  role     = "invalid-role"
+  role     = "member"
 }
 `,
 			expErr: regexp.MustCompile("Missing required argument"),
@@ -100,10 +100,10 @@ resource "onepasswordorg_group_member" "test_member" {
 resource "onepasswordorg_group_member" "test_member" {
   group_id = "test-group-id"
   user_id  = ""
-  role     = "invalid-role"
+  role     = "member"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Attribute user_id string length must be at least 1, got: 0"),
 		},
 	}
 

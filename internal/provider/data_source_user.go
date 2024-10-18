@@ -3,56 +3,59 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type dataSourceUserType struct{}
+var (
+	_ datasource.DataSource              = &userDataSource{}
+	_ datasource.DataSourceWithConfigure = &userDataSource{}
+)
 
-func (d dataSourceUserType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewUserDataSource() datasource.DataSource {
+	return &userDataSource{}
+}
+
+type userDataSource struct {
+	repo storage.Repository
+}
+
+func (d *userDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_user"
+}
+
+func (d userDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides information about a 1password user.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"email": {
+		Attributes: map[string]schema.Attribute{
+			"email": schema.StringAttribute{
 				Description: "The email of the user.",
 				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Type:        types.StringType,
 			},
-			"name": {
+			"name": schema.StringAttribute{
 				Computed: true,
-				Type:     types.StringType,
 			},
-			"id": {
+			"id": schema.StringAttribute{
 				Computed: true,
-				Type:     types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
-func (d dataSourceUserType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return dataSourceUser{
-		p: *prv,
-	}, nil
-}
-
-type dataSourceUser struct {
-	p provider
-}
-
-func (d dataSourceUser) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	if !d.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (d *userDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	appServices := getAppServicesFromDatasourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	d.repo = appServices.Repository
+}
+
+func (d *userDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values.
 	var tfUser User
 	diags := req.Config.Get(ctx, &tfUser)
@@ -62,7 +65,7 @@ func (d dataSourceUser) Read(ctx context.Context, req tfsdk.ReadDataSourceReques
 	}
 
 	// Get user.
-	user, err := d.p.repo.GetUserByEmail(ctx, tfUser.Email.Value)
+	user, err := d.repo.GetUserByEmail(ctx, tfUser.Email.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting user", "Could not get user, unexpected error: "+err.Error())
 		return

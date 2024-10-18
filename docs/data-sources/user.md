@@ -33,5 +33,3 @@ output "user_test" {
 
 - `id` (String) The ID of this resource.
 - `name` (String)
-
-

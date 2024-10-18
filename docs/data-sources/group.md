@@ -33,5 +33,3 @@ output "group_test" {
 
 - `description` (String)
 - `id` (String) The ID of this resource.
-
-
