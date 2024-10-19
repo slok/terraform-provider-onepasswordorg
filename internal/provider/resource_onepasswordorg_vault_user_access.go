@@ -5,63 +5,81 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type resourceVaultUserAccessType struct{}
+var (
+	_ resource.Resource                = &vaultUserAccessResource{}
+	_ resource.ResourceWithConfigure   = &vaultUserAccessResource{}
+	_ resource.ResourceWithImportState = &vaultUserAccessResource{}
+)
 
-func (r resourceVaultUserAccessType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewVaultUserAccessResource() resource.Resource {
+	return &vaultUserAccessResource{}
+}
+
+type vaultUserAccessResource struct {
+	repo storage.Repository
+}
+
+func (r *vaultUserAccessResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_vault_user_access"
+}
+
+func (r *vaultUserAccessResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides vault access for a user.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"vault_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The vault ID.",
+			"vault_id": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "The vault ID.",
 			},
-			"user_id": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The user ID.",
+			"user_id": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "The user ID.",
 			},
 			"permissions": permissionsAttribute,
 		},
-	}, nil
+	}
 }
 
-func (r resourceVaultUserAccessType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceVaultUserAccess{
-		p: *prv,
-	}, nil
-}
-
-type resourceVaultUserAccess struct {
-	p provider
-}
-
-func (r resourceVaultUserAccess) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (r *vaultUserAccessResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	appServices := getAppServicesFromResourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	r.repo = appServices.Repository
+}
+
+func (r *vaultUserAccessResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var tfvga VaultUserAccess
 	diags := req.Plan.Get(ctx, &tfvga)
@@ -77,7 +95,7 @@ func (r resourceVaultUserAccess) Create(ctx context.Context, req tfsdk.CreateRes
 		return
 	}
 
-	err = r.p.repo.EnsureVaultUserAccess(ctx, *v)
+	err = r.repo.EnsureVaultUserAccess(ctx, *v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating access", "Could not create access, unexpected error: "+err.Error())
 		return
@@ -98,12 +116,7 @@ func (r resourceVaultUserAccess) Create(ctx context.Context, req tfsdk.CreateRes
 	}
 }
 
-func (r resourceVaultUserAccess) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultUserAccessResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from plan.
 	var tfVaultUserAccess VaultUserAccess
 	diags := req.State.Get(ctx, &tfVaultUserAccess)
@@ -113,14 +126,14 @@ func (r resourceVaultUserAccess) Read(ctx context.Context, req tfsdk.ReadResourc
 	}
 
 	// Get access.
-	id := tfVaultUserAccess.ID.Value
+	id := tfVaultUserAccess.ID.ValueString()
 	vaultID, userID, err := unpackVaultUserAccessID(id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting access ID", "Could not get access ID:"+err.Error())
 		return
 	}
 
-	access, err := r.p.repo.GetVaultUserAccessByID(ctx, vaultID, userID)
+	access, err := r.repo.GetVaultUserAccessByID(ctx, vaultID, userID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading access", fmt.Sprintf("Could not get access %q, unexpected error: %s", id, err.Error()))
 		return
@@ -140,12 +153,7 @@ func (r resourceVaultUserAccess) Read(ctx context.Context, req tfsdk.ReadResourc
 	}
 }
 
-func (r resourceVaultUserAccess) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultUserAccessResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan.
 	var plan VaultUserAccess
 	diags := req.Plan.Get(ctx, &plan)
@@ -171,7 +179,7 @@ func (r resourceVaultUserAccess) Update(ctx context.Context, req tfsdk.UpdateRes
 		return
 	}
 
-	err = r.p.repo.EnsureVaultUserAccess(ctx, *v)
+	err = r.repo.EnsureVaultUserAccess(ctx, *v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating access", "Could not create access, unexpected error: "+err.Error())
 		return
@@ -192,12 +200,7 @@ func (r resourceVaultUserAccess) Update(ctx context.Context, req tfsdk.UpdateRes
 	}
 }
 
-func (r resourceVaultUserAccess) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultUserAccessResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from plan.
 	var tfVaultUserAccess VaultUserAccess
 	diags := req.State.Get(ctx, &tfVaultUserAccess)
@@ -207,14 +210,14 @@ func (r resourceVaultUserAccess) Delete(ctx context.Context, req tfsdk.DeleteRes
 	}
 
 	// Delete resource.
-	id := tfVaultUserAccess.ID.Value
+	id := tfVaultUserAccess.ID.ValueString()
 	vaultID, userID, err := unpackVaultUserAccessID(id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting access ID", "Could not get access ID:"+err.Error())
 		return
 	}
 
-	err = r.p.repo.DeleteVaultUserAccess(ctx, vaultID, userID)
+	err = r.repo.DeleteVaultUserAccess(ctx, vaultID, userID)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting access", fmt.Sprintf("Could not delete access %q, unexpected error: %s", id, err.Error()))
 		return
@@ -224,18 +227,17 @@ func (r resourceVaultUserAccess) Delete(ctx context.Context, req tfsdk.DeleteRes
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceVaultUserAccess) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *vaultUserAccessResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func mapTfToModelVaultUserAccess(m VaultUserAccess) (*model.VaultUserAccess, error) {
-	userID := m.UserID.Value
-	vaultID := m.VaultID.Value
+	userID := m.UserID.ValueString()
+	vaultID := m.VaultID.ValueString()
 
 	// Check the ID is correct.
-	if m.ID.Value != "" {
-		vid, uid, err := unpackVaultUserAccessID(m.ID.Value)
+	if m.ID.ValueString() != "" {
+		vid, uid, err := unpackVaultUserAccessID(m.ID.ValueString())
 		if err != nil {
 			return nil, err
 		}
@@ -260,9 +262,9 @@ func mapModelToTfVaultUserAccess(m model.VaultUserAccess) (*VaultUserAccess, err
 	id := packVaultUserAccessID(m.VaultID, m.UserID)
 
 	return &VaultUserAccess{
-		ID:          types.String{Value: id},
-		UserID:      types.String{Value: m.UserID},
-		VaultID:     types.String{Value: m.VaultID},
+		ID:          types.StringValue(id),
+		UserID:      types.StringValue(m.UserID),
+		VaultID:     types.StringValue(m.VaultID),
 		Permissions: mapModelToTfAccessPermissions(m.Permissions),
 	}, nil
 }

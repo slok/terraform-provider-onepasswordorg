@@ -3,56 +3,60 @@ package provider
 import (
 	"context"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type dataSourceVaultType struct{}
+var (
+	_ datasource.DataSource              = &vaultDataSource{}
+	_ datasource.DataSourceWithConfigure = &vaultDataSource{}
+)
 
-func (d dataSourceVaultType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewVaultDataSource() datasource.DataSource {
+	return &vaultDataSource{}
+}
+
+type vaultDataSource struct {
+	repo storage.Repository
+}
+
+func (d *vaultDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_vault"
+}
+
+func (d *vaultDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides information about a 1password vault.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"name": {
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
 				Description: "The name of the vault.",
 				Required:    true,
-				Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Type:        types.StringType,
 			},
-			"description": {
-				Computed: true,
-				Type:     types.StringType,
+			"description": schema.StringAttribute{
+				Description: "The description of the vault.",
+				Computed:    true,
 			},
-			"id": {
+			"id": schema.StringAttribute{
 				Computed: true,
-				Type:     types.StringType,
 			},
 		},
-	}, nil
+	}
 }
 
-func (d dataSourceVaultType) NewDataSource(ctx context.Context, p tfsdk.Provider) (tfsdk.DataSource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return dataSourceVault{
-		p: *prv,
-	}, nil
-}
-
-type dataSourceVault struct {
-	p provider
-}
-
-func (d dataSourceVault) Read(ctx context.Context, req tfsdk.ReadDataSourceRequest, resp *tfsdk.ReadDataSourceResponse) {
-	if !d.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (d *vaultDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	appServices := getAppServicesFromDatasourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	d.repo = appServices.Repository
+}
+
+func (d *vaultDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values.
 	var tfVault Vault
 	diags := req.Config.Get(ctx, &tfVault)
@@ -62,7 +66,7 @@ func (d dataSourceVault) Read(ctx context.Context, req tfsdk.ReadDataSourceReque
 	}
 
 	// Get resource.
-	vault, err := d.p.repo.GetVaultByName(ctx, tfVault.Name.Value)
+	vault, err := d.repo.GetVaultByName(ctx, tfVault.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Error getting vault", "Could not get vault, unexpected error: "+err.Error())
 		return
@@ -72,7 +76,14 @@ func (d dataSourceVault) Read(ctx context.Context, req tfsdk.ReadDataSourceReque
 
 	diags = resp.State.Set(ctx, newTfVault)
 	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+}
+
+func getAppServicesFromDatasourceRequest(req *datasource.ConfigureRequest) *providerAppServices {
+	if req.ProviderData != nil {
+		if c, ok := req.ProviderData.(providerAppServices); ok {
+			return &c
+		}
 	}
+
+	return nil
 }

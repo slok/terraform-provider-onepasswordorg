@@ -4,65 +4,78 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type resourceGroupType struct{}
+var (
+	_ resource.Resource                = &groupResource{}
+	_ resource.ResourceWithConfigure   = &groupResource{}
+	_ resource.ResourceWithImportState = &groupResource{}
+)
 
-func (r resourceGroupType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewGroupResource() resource.Resource {
+	return &groupResource{}
+}
+
+type groupResource struct {
+	repo storage.Repository
+}
+
+func (r *groupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_group"
+}
+
+func (r *groupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides a Group resource.
 
 A 1password group is like a team that can contain people and can be used to give access to vaults as a
 group of users.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:          types.StringType,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Required:      true,
-				Description:   "The name of the group.",
+			"name": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Required:    true,
+				Description: "The name of the group.",
 			},
-			"description": {
-				Type:          types.StringType,
-				Optional:      true,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "Managed by Terraform"})},
-				Description:   "The description of the group.",
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("Managed by Terraform"),
+				Description: "The description of the group.",
 			},
 		},
-	}, nil
+	}
 }
 
-func (r resourceGroupType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceGroup{
-		p: *prv,
-	}, nil
-}
-
-type resourceGroup struct {
-	p provider
-}
-
-func (r resourceGroup) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (r *groupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	appServices := getAppServicesFromResourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	r.repo = appServices.Repository
+}
+
+func (r *groupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var tfGroup Group
 	diags := req.Plan.Get(ctx, &tfGroup)
@@ -73,7 +86,7 @@ func (r resourceGroup) Create(ctx context.Context, req tfsdk.CreateResourceReque
 
 	// Create group.
 	g := mapTfToModelGroup(tfGroup)
-	newGroup, err := r.p.repo.CreateGroup(ctx, g)
+	newGroup, err := r.repo.CreateGroup(ctx, g)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating group", "Could not create group, unexpected error: "+err.Error())
 		return
@@ -89,12 +102,7 @@ func (r resourceGroup) Create(ctx context.Context, req tfsdk.CreateResourceReque
 	}
 }
 
-func (r resourceGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *groupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from plan.
 	var tfGroup Group
 	diags := req.State.Get(ctx, &tfGroup)
@@ -104,8 +112,8 @@ func (r resourceGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, 
 	}
 
 	// Get group.
-	id := tfGroup.ID.Value
-	group, err := r.p.repo.GetGroupByID(ctx, id)
+	id := tfGroup.ID.ValueString()
+	group, err := r.repo.GetGroupByID(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading group", fmt.Sprintf("Could not get group %q, unexpected error: %s", id, err.Error()))
 		return
@@ -121,13 +129,7 @@ func (r resourceGroup) Read(ctx context.Context, req tfsdk.ReadResourceRequest, 
 	}
 }
 
-func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
-	// Get plan values.
+func (r *groupResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) { // Get plan values.
 	var plan Group
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
@@ -145,9 +147,9 @@ func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 
 	// Use plan group as the new data and set ID from state.
 	g := mapTfToModelGroup(plan)
-	g.ID = state.ID.Value
+	g.ID = state.ID.ValueString()
 
-	newGroup, err := r.p.repo.EnsureGroup(ctx, g)
+	newGroup, err := r.repo.EnsureGroup(ctx, g)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating group", "Could not update group, unexpected error: "+err.Error())
 		return
@@ -163,12 +165,7 @@ func (r resourceGroup) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 	}
 }
 
-func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *groupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from plan.
 	var tfGroup Group
 	diags := req.State.Get(ctx, &tfGroup)
@@ -178,8 +175,8 @@ func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	}
 
 	// Get group.
-	id := tfGroup.ID.Value
-	err := r.p.repo.DeleteGroup(ctx, id)
+	id := tfGroup.ID.ValueString()
+	err := r.repo.DeleteGroup(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting group", fmt.Sprintf("Could not delete group %q, unexpected error: %s", id, err.Error()))
 		return
@@ -189,23 +186,6 @@ func (r resourceGroup) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceGroup) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-func mapTfToModelGroup(g Group) model.Group {
-	return model.Group{
-		ID:          g.ID.Value,
-		Name:        g.Name.Value,
-		Description: g.Description.Value,
-	}
-}
-
-func mapModelToTfGroup(g model.Group) Group {
-	return Group{
-		ID:          types.String{Value: g.ID},
-		Name:        types.String{Value: g.Name},
-		Description: types.String{Value: g.Description},
-	}
+func (r *groupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

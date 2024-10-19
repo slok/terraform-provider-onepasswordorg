@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 	"github.com/slok/terraform-provider-onepasswordorg/internal/provider"
@@ -48,7 +48,7 @@ resource "onepasswordorg_user" "test_user" {
   email = "testuser@test.test"
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Attribute name string length must be at least 1, got: 0"),
 		},
 
 		"A non set email should fail.": {
@@ -67,7 +67,7 @@ resource "onepasswordorg_user" "test_user" {
   email = ""
 }
 `,
-			expErr: regexp.MustCompile("Attribute can't be empty"),
+			expErr: regexp.MustCompile("Attribute email string length must be at least 1, got: 0"),
 		},
 	}
 

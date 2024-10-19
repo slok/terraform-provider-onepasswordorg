@@ -4,62 +4,75 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
-	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
-	"github.com/slok/terraform-provider-onepasswordorg/internal/provider/attributeutils"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
 
-type resourceVaultType struct{}
+var (
+	_ resource.Resource                = &vaultResource{}
+	_ resource.ResourceWithConfigure   = &vaultResource{}
+	_ resource.ResourceWithImportState = &vaultResource{}
+)
 
-func (r resourceVaultType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
-	return tfsdk.Schema{
+func NewVaultResource() resource.Resource {
+	return &vaultResource{}
+}
+
+type vaultResource struct {
+	repo storage.Repository
+}
+
+func (r *vaultResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_vault"
+}
+
+func (r *vaultResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
 		Description: `
 Provides a vault resource.
 `,
-		Attributes: map[string]tfsdk.Attribute{
-			"id": {
-				Type:     types.StringType,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
 				Computed: true,
 			},
-			"name": {
-				Type:          types.StringType,
-				Required:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{tfsdk.RequiresReplace()},
-				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString},
-				Description:   "The name of the vault.",
+			"name": schema.StringAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				Description: "The name of the vault.",
 			},
-			"description": {
-				Type:          types.StringType,
-				Optional:      true,
-				Computed:      true,
-				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "Managed by Terraform"})},
-				Description:   "The description of the vault.",
+			"description": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString("Managed by Terraform"),
+				Description: "The description of the vault.",
 			},
 		},
-	}, nil
+	}
 }
 
-func (r resourceVaultType) NewResource(_ context.Context, p tfsdk.Provider) (tfsdk.Resource, diag.Diagnostics) {
-	prv := p.(*provider)
-	return resourceVault{
-		p: *prv,
-	}, nil
-}
-
-type resourceVault struct {
-	p provider
-}
-
-func (r resourceVault) Create(ctx context.Context, req tfsdk.CreateResourceRequest, resp *tfsdk.CreateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (r *vaultResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	appServices := getAppServicesFromResourceRequest(&req)
+	if appServices == nil {
 		return
 	}
 
+	r.repo = appServices.Repository
+}
+
+func (r *vaultResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var tfVault Vault
 	diags := req.Plan.Get(ctx, &tfVault)
@@ -70,7 +83,7 @@ func (r resourceVault) Create(ctx context.Context, req tfsdk.CreateResourceReque
 
 	// Create vault.
 	v := mapTfToModelVault(tfVault)
-	newVault, err := r.p.repo.CreateVault(ctx, v)
+	newVault, err := r.repo.CreateVault(ctx, v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error creating vault", "Could not create vault, unexpected error: "+err.Error())
 		return
@@ -86,12 +99,7 @@ func (r resourceVault) Create(ctx context.Context, req tfsdk.CreateResourceReque
 	}
 }
 
-func (r resourceVault) Read(ctx context.Context, req tfsdk.ReadResourceRequest, resp *tfsdk.ReadResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from plan.
 	var tfVault Vault
 	diags := req.State.Get(ctx, &tfVault)
@@ -101,8 +109,8 @@ func (r resourceVault) Read(ctx context.Context, req tfsdk.ReadResourceRequest, 
 	}
 
 	// Get resource.
-	id := tfVault.ID.Value
-	vault, err := r.p.repo.GetVaultByID(ctx, id)
+	id := tfVault.ID.ValueString()
+	vault, err := r.repo.GetVaultByID(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading vault", fmt.Sprintf("Could not get vault %q, unexpected error: %s", id, err.Error()))
 		return
@@ -118,12 +126,7 @@ func (r resourceVault) Read(ctx context.Context, req tfsdk.ReadResourceRequest, 
 	}
 }
 
-func (r resourceVault) Update(ctx context.Context, req tfsdk.UpdateResourceRequest, resp *tfsdk.UpdateResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Get plan values.
 	var plan Vault
 	diags := req.Plan.Get(ctx, &plan)
@@ -142,9 +145,9 @@ func (r resourceVault) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 
 	// Use plan group as the new data and set ID from state.
 	v := mapTfToModelVault(plan)
-	v.ID = state.ID.Value
+	v.ID = state.ID.ValueString()
 
-	newVault, err := r.p.repo.EnsureVault(ctx, v)
+	newVault, err := r.repo.EnsureVault(ctx, v)
 	if err != nil {
 		resp.Diagnostics.AddError("Error updating vault", "Could not update vault, unexpected error: "+err.Error())
 		return
@@ -160,12 +163,7 @@ func (r resourceVault) Update(ctx context.Context, req tfsdk.UpdateResourceReque
 	}
 }
 
-func (r resourceVault) Delete(ctx context.Context, req tfsdk.DeleteResourceRequest, resp *tfsdk.DeleteResourceResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *vaultResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from plan.
 	var tfVault Vault
 	diags := req.State.Get(ctx, &tfVault)
@@ -175,8 +173,8 @@ func (r resourceVault) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	}
 
 	// Delete resource.
-	id := tfVault.ID.Value
-	err := r.p.repo.DeleteVault(ctx, id)
+	id := tfVault.ID.ValueString()
+	err := r.repo.DeleteVault(ctx, id)
 	if err != nil {
 		resp.Diagnostics.AddError("Error deleting vault", fmt.Sprintf("Could not delete vault %q, unexpected error: %s", id, err.Error()))
 		return
@@ -186,23 +184,16 @@ func (r resourceVault) Delete(ctx context.Context, req tfsdk.DeleteResourceReque
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourceVault) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	// Save the import identifier in the id attribute.
-	tfsdk.ResourceImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+func (r *vaultResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func mapTfToModelVault(v Vault) model.Vault {
-	return model.Vault{
-		ID:          v.ID.Value,
-		Name:        v.Name.Value,
-		Description: v.Description.Value,
+func getAppServicesFromResourceRequest(req *resource.ConfigureRequest) *providerAppServices {
+	if req.ProviderData != nil {
+		if c, ok := req.ProviderData.(providerAppServices); ok {
+			return &c
+		}
 	}
-}
 
-func mapModelToTfVault(u model.Vault) Vault {
-	return Vault{
-		ID:          types.String{Value: u.ID},
-		Name:        types.String{Value: u.Name},
-		Description: types.String{Value: u.Description},
-	}
+	return nil
 }

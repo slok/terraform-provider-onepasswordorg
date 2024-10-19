@@ -31,7 +31,5 @@ output "vault_test" {
 
 ### Read-Only
 
-- `description` (String)
+- `description` (String) The description of the vault.
 - `id` (String) The ID of this resource.
-
-

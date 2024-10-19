@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/slok/terraform-provider-onepasswordorg/internal/model"
 )
 
 type User struct {
@@ -10,16 +11,64 @@ type User struct {
 	Name  types.String `tfsdk:"name"`
 }
 
+func mapModelToTfUser(u model.User) User {
+	return User{
+		ID:    types.StringValue(u.ID),
+		Email: types.StringValue(u.Email),
+		Name:  types.StringValue(u.Name),
+	}
+}
+
+func mapTfToModelUser(u User) model.User {
+	return model.User{
+		ID:    u.ID.ValueString(),
+		Email: u.Email.ValueString(),
+		Name:  u.Name.ValueString(),
+	}
+}
+
 type Group struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
 
+func mapModelToTfGroup(g model.Group) Group {
+	return Group{
+		ID:          types.StringValue(g.ID),
+		Name:        types.StringValue(g.Name),
+		Description: types.StringValue(g.Description),
+	}
+}
+
+func mapTfToModelGroup(g Group) model.Group {
+	return model.Group{
+		ID:          g.ID.ValueString(),
+		Name:        g.Name.ValueString(),
+		Description: g.Description.ValueString(),
+	}
+}
+
 type Vault struct {
 	ID          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
+}
+
+func mapModelToTfVault(u model.Vault) Vault {
+	return Vault{
+		ID:          types.StringValue(u.ID),
+		Name:        types.StringValue(u.Name),
+		Description: types.StringValue(u.Description),
+	}
+}
+
+func mapTfToModelVault(v Vault) model.Vault {
+	return model.Vault{
+		ID:          v.ID.ValueString(),
+		Name:        v.Name.ValueString(),
+		Description: v.Description.ValueString(),
+	}
 }
 
 type Member struct {

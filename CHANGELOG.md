@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Update Go version to v1.23.
+- Update terraform related dependencies.
+- Remove all `terraform-plugin-sdk` usage in favor of the new `terraform-plugin-framework` libs.
+
 ## [v0.5.0] - 2022-07-30
 
 ### Changed
@@ -9,13 +15,11 @@
 - Updated terraform dependencies (SDKs, plugins...).
 - Updated TFE embedded `op` CLI to 2.6.0.
 
-
 ## [v0.4.0] - 2022-03-18
 
 ### Added
 
 - Vault user access with fine grain permissions.
-
 
 ## [v0.3.0] - 2022-03-17
 

@@ -11,6 +11,7 @@ import (
 )
 
 // OpCli knows how to execute Op CLI commands.
+// Check https://app-updates.agilebits.com/product_history/CLI2.
 type OpCli interface {
 	RunOpCmd(ctx context.Context, args []string) (stdout, stderr string, err error)
 }
