@@ -3,8 +3,10 @@ package provider
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 
 	"github.com/slok/terraform-provider-onepasswordorg/internal/storage"
 )
@@ -35,6 +37,9 @@ Provides information about a 1password user.
 			"email": schema.StringAttribute{
 				Description: "The email of the user.",
 				Required:    true,
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Computed: true,

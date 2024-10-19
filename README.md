@@ -21,8 +21,8 @@ To manage secrets use the [official 1password](https://registry.terraform.io/pro
 
 ## Requirements
 
-- [Terraform](https://www.terraform.io/downloads.html) 1.1 or higher
-- [Go](https://golang.org/doc/install) 1.18 (to build the provider plugin)
+- [Terraform](https://www.terraform.io/downloads.html) >=1.0
+- [Go](https://golang.org/doc/install) >=1.23 (to build the provider plugin)
 - [1password](https://app-updates.agilebits.com/product_history/CLI2) V2 CLI.
 
 ## How does it work
