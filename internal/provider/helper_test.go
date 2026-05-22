@@ -172,3 +172,28 @@ func assertVaultUserAccessDeletedOnFakeStorage(t *testing.T, vaultID, userID str
 		return nil
 	})
 }
+
+func assertServiceAccountOnFakeStorage(t *testing.T, expSA *model.ServiceAccount) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		repo := getFakeRepository(t)
+
+		got, err := repo.GetServiceAccountByID(context.TODO(), expSA.ID)
+		assert.NoError(err)
+		assert.Equal(expSA, got)
+		return nil
+	})
+}
+
+func assertServiceAccountDeletedOnFakeStorage(t *testing.T, id string) resource.TestCheckFunc {
+	assert := assert.New(t)
+
+	return resource.TestCheckFunc(func(s *terraform.State) error {
+		repo := getFakeRepository(t)
+
+		_, err := repo.GetServiceAccountByID(context.TODO(), id)
+		assert.Error(err)
+		return nil
+	})
+}

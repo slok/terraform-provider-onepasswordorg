@@ -99,11 +99,15 @@ func (o opCli) RunOpCmd(ctx context.Context, args []string) (stdout, stderr stri
 		return "", "", fmt.Errorf("unauthenticated, op cli must singin first")
 	}
 
-	// Set session token and account before executing the command.
-	args = append([]string{"--session", o.sessionToken, "--account", "terraform"}, args...)
+	// Set account flag before executing the command.
+	args = append([]string{"--account", "terraform"}, args...)
 
 	// Prepare command and execute.
 	cmd := exec.CommandContext(ctx, o.binPath, args...)
+	// Pass session token via environment variable instead of --session flag.
+	// Some subcommands (e.g. service-account) only check OP_SESSION_<shorthand>
+	// and ignore the --session flag, causing "not signed in" errors.
+	cmd.Env = append(os.Environ(), fmt.Sprintf("OP_SESSION_terraform=%s", o.sessionToken))
 	var sout, serr bytes.Buffer
 	cmd.Stdout = &sout
 	cmd.Stderr = &serr

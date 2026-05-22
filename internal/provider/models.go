@@ -71,6 +71,13 @@ func mapTfToModelVault(v Vault) model.Vault {
 	}
 }
 
+type ServiceAccount struct {
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Token       types.String `tfsdk:"token"`
+	VaultAccess types.Map    `tfsdk:"vault_access"`
+}
+
 type Member struct {
 	ID      types.String `tfsdk:"id"`
 	UserID  types.String `tfsdk:"user_id"`

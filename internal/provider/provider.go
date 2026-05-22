@@ -92,7 +92,6 @@ so it satisfies the op Cli requirement inside Terraform cloud workers.
 	}
 }
 
-// Provider configuration.
 type providerData struct {
 	Address         types.String `tfsdk:"address"`
 	Email           types.String `tfsdk:"email"`
@@ -103,7 +102,6 @@ type providerData struct {
 }
 
 func (p *onePasswordOrgProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	// Retrieve provider data from configuration.
 	var config providerData
 	diags := req.Config.Get(ctx, &config)
 	resp.Diagnostics.Append(diags...)
@@ -111,21 +109,16 @@ func (p *onePasswordOrgProvider) Configure(ctx context.Context, req provider.Con
 		return
 	}
 
-	// Error summaries
 	const (
 		configErrSummary = "Unable to configure client"
 		createErrSummary = "Unable to create op client"
 	)
 
-	// Get if we are in fake mode.
 	fakeStoragePath, err := p.configureFakeStoragePath(config)
 	if err != nil {
 		resp.Diagnostics.AddError(configErrSummary, "Invalid fake storage path:\n\n"+err.Error())
 	}
 
-	// Create fake or regular mode.
-	// If the user has set the fake storage path then we are going to use a fake repository.
-	// If the user didn't, we will use the op cli based repository (a.k.a real 1password APIs).
 	var repo storage.Repository
 	if fakeStoragePath != "" {
 		repo, err = fake.NewRepository(fakeStoragePath)
@@ -159,14 +152,12 @@ func (p *onePasswordOrgProvider) Configure(ctx context.Context, req provider.Con
 			resp.Diagnostics.AddError(configErrSummary, "Invalid cli path:\n\n"+err.Error())
 		}
 
-		// Create OP cli.
 		cli, err := onepasswordcli.NewOpCli(cliPath, address, email, secretKey, password)
 		if err != nil {
 			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op cmd client:\n\n"+err.Error())
 			return
 		}
 
-		// Create  repository.
 		repo, err = onepasswordcli.NewRepository(cli)
 		if err != nil {
 			resp.Diagnostics.AddError(createErrSummary, "Unable to create 1password op repository:\n\n"+err.Error())
@@ -186,7 +177,6 @@ func (p *onePasswordOrgProvider) configureAddress(config providerData) (string, 
 		return "", fmt.Errorf("cannot use unknown value as address")
 	}
 
-	// If not set get from env, the value has priority.
 	var address string
 	if config.Address.IsNull() {
 		address = os.Getenv(envVarOpAddress)
@@ -206,7 +196,6 @@ func (p *onePasswordOrgProvider) configureEmail(config providerData) (string, er
 		return "", fmt.Errorf("cannot use unknown value as email")
 	}
 
-	// If not set get from env, the value has priority.
 	var email string
 	if config.Email.IsNull() {
 		email = os.Getenv(envVarOpEmail)
@@ -226,7 +215,6 @@ func (p *onePasswordOrgProvider) configureSecretKey(config providerData) (string
 		return "", fmt.Errorf("cannot use unknown value as secret key")
 	}
 
-	// If not set get from env, the value has priority.
 	var secretKey string
 	if config.SecretKey.IsNull() {
 		secretKey = os.Getenv(envVarOpSecretKey)
@@ -246,7 +234,6 @@ func (p *onePasswordOrgProvider) configurePassword(config providerData) (string,
 		return "", fmt.Errorf("cannot use unknown value as password")
 	}
 
-	// If not set get from env, the value has priority.
 	var password string
 	if config.Password.IsNull() {
 		password = os.Getenv(envVarOpPassword)
@@ -262,7 +249,6 @@ func (p *onePasswordOrgProvider) configurePassword(config providerData) (string,
 }
 
 func (p *onePasswordOrgProvider) configureFakeStoragePath(config providerData) (string, error) {
-	// If not set get from env, the value has priority.
 	var fakePath string
 	if config.FakeStoragePath.IsNull() {
 		fakePath = os.Getenv(EnvVarOpFakeStoragePath)
@@ -274,7 +260,6 @@ func (p *onePasswordOrgProvider) configureFakeStoragePath(config providerData) (
 }
 
 func (p *onePasswordOrgProvider) configureCliPath(config providerData) (string, error) {
-	// If not set get from env, the value has priority.
 	var cliPath string
 	if config.FakeStoragePath.IsNull() {
 		cliPath = os.Getenv(EnvVarOpCliPath)
@@ -293,6 +278,7 @@ func (p *onePasswordOrgProvider) Resources(ctx context.Context) []func() resourc
 		NewGroupMemberResource,
 		NewVaultUserAccessResource,
 		NewVaultGroupAccessResource,
+		NewServiceAccountResource,
 	}
 }
 
